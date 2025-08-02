@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Out Fashion</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 for beautiful pop-ups -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* NEW: Beautiful Animated Aurora Background */
+        @keyframes moveInCircle { 0% { transform: rotate(0deg); } 50% { transform: rotate(180deg); } 100% { transform: rotate(360deg); } }
+        @keyframes moveVertical { 0% { transform: translateY(-50%); } 50% { transform: translateY(50%); } 100% { transform: translateY(-50%); } }
+        @keyframes moveHorizontal { 0% { transform: translateX(-50%); } 50% { transform: translateX(50%); } 100% { transform: translateX(-50%); } }
+        body { background-color: #000; overflow: hidden; }
+        .background-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .shape { position: absolute; filter: blur(150px); }
+        .shape-1 { background-color: #005f73; height: 500px; width: 500px; top: -150px; left: -150px; border-radius: 50%; animation: moveInCircle 20s ease-in-out infinite alternate; }
+        .shape-2 { background-color: #0a9396; height: 400px; width: 400px; top: 50vh; left: 60vw; border-radius: 50%; animation: moveVertical 30s ease-in-out infinite alternate; }
+        .shape-3 { background-color: #94d2bd; height: 350px; width: 350px; top: 30vh; left: 20vw; border-radius: 50%; animation: moveHorizontal 40s ease-in-out infinite alternate; }
+        .shape-4 { background-color: #ee9b00; height: 250px; width: 250px; top: 70vh; left: 10vw; border-radius: 50%; animation: moveInCircle 25s ease-in-out infinite alternate; }
+        .shape-5 { background-color: #ae2012; height: 300px; width: 300px; top: -100px; left: 70vw; border-radius: 50%; animation: moveVertical 35s ease-in-out infinite alternate; }
+        
+        /* Main container styling */
+        .main-content-container { position: relative; z-index: 1; height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; overflow-y: auto; }
+        #passcode-modal { z-index: 10; }
+        
+        .card{background-color:rgba(10,10,20,.7);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1)}
+        .delete-barcode-btn { background: #c53030; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; line-height: 24px; text-align: center; cursor: pointer; font-weight: bold; margin-left: 1rem; transition: background 0.2s; }
+        .delete-barcode-btn:hover { background: #e53e3e; }
+
+        /* Other styles */
+        .overflow-y-auto::-webkit-scrollbar{width:8px}.overflow-y-auto::-webkit-scrollbar-track{background:#2d3748}.overflow-y-auto::-webkit-scrollbar-thumb{background:#4a5568;border-radius:10px}.status-message{transition:all .5s ease-in-out;overflow:hidden;max-height:0;padding:0;margin-top:0;opacity:0}.status-message.show{max-height:100px;padding:.5rem;margin-top:.75rem;opacity:1}.auto-save-status{opacity:0;transition:opacity .5s ease;color:#48bb78}.auto-save-status.show{opacity:1}.text-primary{color:#e2e8f0}.text-secondary{color:#a0aec0}.bg-card-section{background-color:rgba(45,55,72,.5)}.border-theme{border-color:rgba(255,255,255,.1)}.btn-primary{background-color:#4299e1;color:#fff}.btn-primary:hover{background-color:#2b6cb0}.btn-secondary{background-color:#4a5568;color:#e2e8f0;border:1px solid #718096}.btn-secondary:hover{background-color:#2d3748}.btn-danger{background-color:#e53e3e;color:#fff}.btn-danger:hover{background-color:#c53030}.btn-info{background-color:#5a67d8;color:#fff}.btn-info:hover{background-color:#4c51bf}.btn-success{background-color:#38a169;color:#fff}.btn-success:hover{background-color:#2f855a}input,select,textarea{background-color:#1a202c;border-color:#4a5568;color:#e2e8f0}input::placeholder,textarea::placeholder{color:#718096}input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.8);cursor:pointer}
+        .swal2-popup{background-color:#1a202c!important;color:#e2e8f0!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:1rem!important}.swal2-title{color:#e2e8f0!important}.swal2-html-container{color:#a0aec0!important}.swal2-confirm,.swal2-cancel{border-radius:.5rem!important}
+        
+        /* NEW: Print Layout */
+        @media print{body>*:not(#print-area){display:none!important}#print-area{display:block!important;position:absolute;left:0;top:0;width:100%;padding:1cm;box-sizing:border-box;font-family:'Arial',sans-serif;color:#000;background-color:#fff}.no-print{display:none!important}#print-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:15px}.print-company-name{font-size:16pt;font-weight:700}.print-date-time{font-size:10pt}#print-details-container,#printCustomNote{display:none}#printBarcodeList{font-size:9pt;padding:0;margin:0;column-count:5;column-gap:15px}#printBarcodeList>div{break-inside:avoid;page-break-inside:avoid;padding:2px 0;white-space:nowrap}.print-footer{display:none!important}}
+    </style>
+</head>
+<body>
+    <!-- New Background Container -->
+    <div class="background-container"> <div class="shape shape-1"></div> <div class="shape shape-2"></div> <div class="shape shape-3"></div> <div class="shape shape-4"></div> <div class="shape shape-5"></div> </div>
+    
+    <div class="main-content-container">
+        <!-- Passcode Modal -->
+        <div id="passcode-modal" class="fixed inset-0 flex items-center justify-center"><div class="card p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center"><h2 class="text-2xl font-bold mb-4 text-primary">Enter Passcode</h2><p class="text-secondary mb-6">Please enter the passcode to access the application.</p><input type="password" id="passcodeInput" inputmode="numeric" pattern="[0-9]*" class="w-full p-3 mb-4 text-center text-lg border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" autocomplete="off" /><button id="passcodeSubmitBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary">Enter</button><p id="passcode-error" class="text-red-400 mt-4 h-4"></p></div></div>
+        
+        <!-- Main Application Body -->
+        <div id="main-app" class="card p-6 lg:p-8 rounded-2xl shadow-2xl w-full max-w-7xl no-print"><div class="flex justify-between items-center mb-6 flex-wrap gap-4"><h1 class="text-2xl lg:text-3xl font-extrabold"><span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-400">Order Management System</span></h1><div id="live-clock" class="text-xl lg:text-2xl font-bold text-slate-300 order-3 lg:order-2 w-full lg:w-auto text-center"></div></div><div class="flex flex-col lg:flex-row gap-8 mt-4"><div class="w-full lg:w-3/5 flex flex-col gap-y-6"><p class="text-center text-secondary -mt-2">Scan order items.</p><div class="p-4 bg-blue-900/30 rounded-lg border border-blue-700/50 text-center shadow-md"><p class="text-xl font-semibold text-blue-200">Unique Barcodes: <span id="uniqueOrderCount" class="text-purple-400 text-2xl font-bold">0</span></p></div><div><div class="flex flex-col sm:flex-row gap-4"><input type="text" id="orderScanInput" placeholder="Barcode number..." class="flex-grow p-3 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200 shadow-sm" /><button id="addOrderBarcodeBtn" class="px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary">Scan</button></div><div id="statusMessage" class="status-message rounded-lg text-center font-semibold p-2"></div></div><div><h2 class="text-2xl font-bold text-primary mb-4 border-b border-theme pb-2">Scanned Barcodes</h2><div id="orderListContainer" class="bg-card-section p-4 rounded-lg border border-theme max-h-60 lg:max-h-96 overflow-y-auto shadow-inner"><ul id="scannedOrderBarcodesList" class="space-y-2"><p id="noOrderBarcodesMessage" class="text-secondary text-center py-4">No barcodes scanned.</p></ul></div></div><button id="clearCurrentOrderBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-secondary">Clear Current Order</button></div><div class="w-full lg:w-2/5 flex flex-col gap-y-8"><div class="p-6 bg-card-section rounded-xl border border-theme shadow-inner h-fit"><h2 class="text-2xl font-bold text-primary mb-4 border-b border-theme pb-2">Export & Customize</h2><div class="mb-4"><label for="customPrintTitle" class="block mb-2 text-sm font-medium text-secondary">Custom Title for Print</label><input type="text" id="customPrintTitle" placeholder="e.g., Customer Order #123" class="w-full p-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"></div><div class="mb-4"><label for="customPrintNote" class="block mb-2 text-sm font-medium text-secondary">Custom Note for Print</label><textarea id="customPrintNote" placeholder="Add a note..." rows="2" class="w-full p-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"></textarea></div><button id="printScannedOrderBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-info">Print Order (A4)</button><button id="downloadCsvBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-success">Download CSV</button></div><div class="p-6 bg-card-section rounded-xl border border-theme shadow-inner h-fit"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold text-primary border-b border-theme pb-2">Load Previous Orders</h2><span id="autoSaveStatus" class="auto-save-status font-semibold">✓ Saved</span></div><div class="mb-4"><label for="searchByDate" class="block mb-2 text-sm font-medium text-secondary">Search by Date</label><div class="flex gap-2"><input type="date" id="searchByDate" class="w-full p-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"><button id="resetDateFilterBtn" class="px-4 py-2 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-secondary text-xs">Reset</button></div></div><div class="flex flex-col sm:flex-row gap-4"><select id="savedSessionsSelect" class="flex-grow p-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"><option value="">Select a saved session</option></select><button id="loadSelectedSessionBtn" class="px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary">Load</button></div><button id="deleteSelectedSessionBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-danger">Delete</button></div></div></div></div>
+    </div>
+    
+    <!-- Print Area -->
+    <div id="print-area" class="hidden"> <div id="print-header"> <div class="print-company-name">WORLD OUT FASHION</div> <div class="print-date-time"></div> </div> <div id="printBarcodeList"></div> </div>
+
+    <!-- NEW: Audio elements for sound effects -->
+    <audio id="success-sound" src="https://pixabay.com/sound-effects/sounds/level-win-6416.mp3" preload="auto"></audio>
+    <audio id="error-sound" src="https://pixabay.com/sound-effects/sounds/error-126627.mp3" preload="auto"></audio>
+
+    <script>
+    // --- GLOBAL VARIABLES & ELEMENT SELECTORS ---
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwCvptMvfnyyT1KXET2QfFBudL95ib7kK1A737v5wYPPh_X3v4p1zUZ8VDynaZ8rLix/exec";
+    let scannedUniqueBarcodes = new Set();
+    let currentSessionId = null;
+    let userPasscode = null;
+    let allSessions = [];
+
+    const el = {
+        mainApp: document.getElementById("main-app"),
+        passcodeModal: document.getElementById("passcode-modal"),
+        passcodeInput: document.getElementById("passcodeInput"),
+        passcodeSubmitBtn: document.getElementById("passcodeSubmitBtn"),
+        passcodeError: document.getElementById("passcode-error"),
+        statusMessage: document.getElementById("statusMessage"),
+        liveClock: document.getElementById("live-clock"),
+        uniqueOrderCount: document.getElementById("uniqueOrderCount"),
+        orderScanInput: document.getElementById("orderScanInput"),
+        addOrderBarcodeBtn: document.getElementById("addOrderBarcodeBtn"),
+        scannedOrderBarcodesList: document.getElementById("scannedOrderBarcodesList"),
+        noOrderBarcodesMessage: document.getElementById("noOrderBarcodesMessage"),
+        orderListContainer: document.getElementById("orderListContainer"),
+        clearCurrentOrderBtn: document.getElementById("clearCurrentOrderBtn"),
+        printScannedOrderBtn: document.getElementById("printScannedOrderBtn"),
+        downloadCsvBtn: document.getElementById("downloadCsvBtn"),
+        savedSessionsSelect: document.getElementById("savedSessionsSelect"),
+        loadSelectedSessionBtn: document.getElementById("loadSelectedSessionBtn"),
+        deleteSelectedSessionBtn: document.getElementById("deleteSelectedSessionBtn"),
+        searchByDate: document.getElementById("searchByDate"),
+        resetDateFilterBtn: document.getElementById("resetDateFilterBtn"),
+        autoSaveStatus: document.getElementById("autoSaveStatus"),
+        successSound: document.getElementById("success-sound"),
+        errorSound: document.getElementById("error-sound"),
+        printDateTime: document.querySelector(".print-date-time"),
+        printBarcodeList: document.getElementById("printBarcodeList"),
+    };
+
+    // --- CORE LOGIC ---
+
+    // 1. AUTHENTICATION
+    async function validateAndLoadApp(passcode) {
+        el.passcodeError.textContent = '';
+        el.passcodeSubmitBtn.disabled = true;
+        el.passcodeSubmitBtn.textContent = 'Checking...';
+        try {
+            const uniqueUrl = `${WEB_APP_URL}?passcode=${encodeURIComponent(passcode)}&t=${new Date().getTime()}`;
+            const response = await fetch(uniqueUrl);
+            if (!response.ok) throw new Error("Network error");
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+            
+            userPasscode = passcode;
+            allSessions = data;
+            el.passcodeModal.style.display = 'none';
+            document.querySelector(".main-content-container").style.overflowY = 'auto';
+            document.body.style.overflow = 'auto';
+            el.mainApp.style.display = 'block';
+            initializeMainApp();
+        } catch (error) {
+            console.error("Authentication Failed:", error.message);
+            el.passcodeError.textContent = "Invalid passcode. Please try again.";
+            el.passcodeSubmitBtn.disabled = false;
+            el.passcodeSubmitBtn.textContent = 'Enter';
+        }
+    }
+
+    // 2. INITIALIZATION (Called ONCE after successful login)
+    function initializeMainApp() {
+        updateClock();
+        setInterval(updateClock, 1000);
+        populateSessionsDropdown(allSessions);
+        attachEventListeners();
+    }
+
+    // 3. ATTACH ALL EVENT LISTENERS
+    function attachEventListeners() {
+        el.orderScanInput.addEventListener("keypress", e => e.key === 'Enter' && handleOrderScan());
+        el.addOrderBarcodeBtn.addEventListener("click", handleOrderScan);
+        el.clearCurrentOrderBtn.addEventListener("click", clearCurrentOrder);
+        el.printScannedOrderBtn.addEventListener("click", printScannedOrder);
+        el.downloadCsvBtn.addEventListener("click", downloadCsv);
+        el.loadSelectedSessionBtn.addEventListener("click", loadSelectedSession);
+        el.deleteSelectedSessionBtn.addEventListener("click", deleteSelectedSession);
+        el.searchByDate.addEventListener("input", filterSessionsByDate);
+        el.resetDateFilterBtn.addEventListener("click", () => {
+            el.searchByDate.value = "";
+            filterSessionsByDate();
+        });
+        // NEW: Event listener for deleting single barcodes
+        el.scannedOrderBarcodesList.addEventListener('click', (event) => {
+            if (event.target.classList.contains('delete-barcode-btn')) {
+                const barcodeToDelete = event.target.dataset.barcode;
+                deleteSingleBarcode(barcodeToDelete);
+            }
+        });
+    }
+
+    // 4. MAIN FUNCTIONS
+    function handleOrderScan() {
+        const barcode = el.orderScanInput.value.trim();
+        if (!barcode) return;
+        if (scannedUniqueBarcodes.has(barcode)) {
+            el.errorSound.play();
+            showStatusMessage(`Already Scanned: ${barcode}`, "error");
+        } else {
+            if (scannedUniqueBarcodes.size === 0) {
+                currentSessionId = Date.now().toString();
+            }
+            scannedUniqueBarcodes.add(barcode);
+            el.successSound.play();
+            renderPermanentBarcodes();
+            autoSaveSession();
+            showStatusMessage(`Success: ${barcode}`, "success");
+        }
+        el.orderScanInput.value = "";
+        el.orderScanInput.focus();
+    }
+    
+    // NEW: Function to delete a single barcode
+    function deleteSingleBarcode(barcode) {
+        if (scannedUniqueBarcodes.has(barcode)) {
+            scannedUniqueBarcodes.delete(barcode);
+            renderPermanentBarcodes();
+            autoSaveSession(); // Save the change to the backend
+        }
+    }
+
+    async function autoSaveSession() {
+        if (!currentSessionId) return; // Don't save if there's no session
+        el.autoSaveStatus.classList.remove("show");
+        const barcodesArray = Array.from(scannedUniqueBarcodes);
+        const sessionName = `Session - ${getTimestamp(currentSessionId)}`;
+        try {
+            await fetch(WEB_APP_URL, {
+                method: 'POST', mode: 'cors',
+                body: JSON.stringify({
+                    action: 'saveSession', passcode: userPasscode,
+                    sessionID: currentSessionId, sessionName: sessionName, barcodes: barcodesArray
+                })
+            });
+            el.autoSaveStatus.classList.add("show");
+            setTimeout(() => el.autoSaveStatus.classList.remove("show"), 2000);
+            
+            const sessionIndex = allSessions.findIndex(s => s.id === currentSessionId);
+            if(sessionIndex > -1) {
+                allSessions[sessionIndex].data.uniqueBarcodes = barcodesArray;
+            } else {
+                allSessions.push({ id: currentSessionId, name: sessionName, createdAt: parseInt(currentSessionId), data: { uniqueBarcodes: barcodesArray } });
+                populateSessionsDropdown(allSessions);
+            }
+        } catch (error) { console.error('Save Error:', error); }
+    }
+
+    async function deleteSelectedSession() {
+        const selectedId = el.savedSessionsSelect.value;
+        if (!selectedId) return Swal.fire({ title: "Oops...", text: "Please select a session to delete.", icon: "warning" });
+        const result = await Swal.fire({ title: "Are you sure?", text: "You won't be able to revert this!", icon: "warning", showCancelButton: true, confirmButtonColor: "#d33", cancelButtonColor: "#3085d6", confirmButtonText: "Yes, delete it!" });
+        if (result.isConfirmed) {
+            try {
+                await fetch(WEB_APP_URL, {
+                    method: 'POST', mode: 'cors',
+                    body: JSON.stringify({ action: 'deleteSession', passcode: userPasscode, sessionID: selectedId })
+                });
+                Swal.fire({ title: "Deleted!", text: "The session has been deleted.", icon: "success", timer: 1500 });
+                if (currentSessionId === selectedId) clearCurrentOrder(false);
+                allSessions = allSessions.filter(s => s.id !== selectedId);
+                filterSessionsByDate();
+            } catch (error) { Swal.fire("Error!", "Could not delete the session.", "error"); }
+        }
+    }
+
+    function loadSelectedSession() {
+        const selectedId = el.savedSessionsSelect.value;
+        if (!selectedId) return Swal.fire({ title: "Oops...", text: "Please select a session to load.", icon: "warning" });
+        const session = allSessions.find(s => s.id === selectedId);
+        if (session) {
+            currentSessionId = session.id;
+            scannedUniqueBarcodes = new Set(session.data.uniqueBarcodes || []);
+            renderPermanentBarcodes();
+            Swal.fire({ title: 'Loaded!', text: `Session '${session.name}' has been loaded.`, icon: 'success', timer: 1500 });
+        }
+    }
+
+    // 5. UI & UTILITY FUNCTIONS
+    function renderPermanentBarcodes() {
+        el.scannedOrderBarcodesList.innerHTML = "";
+        const hasBarcodes = scannedUniqueBarcodes.size > 0;
+        el.noOrderBarcodesMessage.style.display = hasBarcodes ? "none" : "block";
+        if (hasBarcodes) {
+            const barcodesArray = Array.from(scannedUniqueBarcodes).reverse();
+            barcodesArray.forEach((barcode, index) => {
+                const li = document.createElement("li");
+                li.className = "flex items-center justify-between p-2 rounded-md shadow-sm border text-lg font-medium bg-gray-700/50 border-gray-600/50 text-gray-200";
+                li.innerHTML = `<span>${barcode}</span><button class="delete-barcode-btn no-print" data-barcode="${barcode}" title="Delete this barcode">×</button>`;
+                el.scannedOrderBarcodesList.appendChild(li);
+            });
+            el.orderListContainer.scrollTop = 0;
+        }
+        el.uniqueOrderCount.textContent = scannedUniqueBarcodes.size;
+    }
+
+    function populateSessionsDropdown(sessionsToLoad) {
+        el.savedSessionsSelect.innerHTML = `<option value="">Select a saved session</option>`;
+        sessionsToLoad.sort((a, b) => b.createdAt - a.createdAt).forEach(session => {
+            const option = document.createElement("option");
+            option.value = session.id;
+            option.textContent = session.name;
+            el.savedSessionsSelect.appendChild(option);
+        });
+    }
+    
+    function filterSessionsByDate() {
+        const filterDate = el.searchByDate.value;
+        const sessionsToLoad = filterDate ? allSessions.filter(s => new Date(s.createdAt).toLocaleDateString('en-CA') === filterDate) : allSessions;
+        populateSessionsDropdown(sessionsToLoad);
+    }
+
+    async function clearCurrentOrder() {
+        if(scannedUniqueBarcodes.size === 0) return;
+        const result = await Swal.fire({ title: "Are you sure?", text: "This will clear all currently scanned items.", icon: "warning", showCancelButton: true, confirmButtonText: "Yes, clear it!"});
+        if (result.isConfirmed) {
+            scannedUniqueBarcodes.clear();
+            currentSessionId = null;
+            renderPermanentBarcodes();
+            Swal.fire({ title: "Cleared!", icon: "info", timer: 1500 });
+        }
+    }
+    
+    function showStatusMessage(message, type) {
+        el.statusMessage.textContent = message;
+        el.statusMessage.className = `status-message rounded-lg text-center font-semibold p-2 ${type === 'success' ? 'bg-green-800 text-green-200' : 'bg-red-800 text-red-200'}`;
+        el.statusMessage.classList.add("show");
+        setTimeout(() => el.statusMessage.classList.remove("show"), 2500);
+    }
+    
+    function updateClock() {
+        el.liveClock.textContent = new Date().toLocaleString("en-US", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    }
+    
+    function getTimestamp(ts) {
+        return new Date(parseInt(ts, 10)).toLocaleString("en-US", { dateStyle: 'short', timeStyle: 'short', hour12: false });
+    }
+
+    function printScannedOrder() {
+        if (scannedUniqueBarcodes.size === 0) return Swal.fire({ title: "Empty!", text: "There are no barcodes to print.", icon: "warning" });
+        el.printDateTime.textContent = new Date().toLocaleString("en-US", { dateStyle: 'long', timeStyle: 'short' });
+        el.printBarcodeList.innerHTML = Array.from(scannedUniqueBarcodes).map((barcode, i) => `<div>${i + 1}. ${barcode}</div>`).join('');
+        window.print();
+    }
+
+    function downloadCsv() {
+        if (scannedUniqueBarcodes.size === 0) return Swal.fire({ title: "Empty!", text: "There are no barcodes to download.", icon: "warning" });
+        const csvContent = "Barcode\n" + Array.from(scannedUniqueBarcodes).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `scanned_order_${Date.now()}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+
+    // --- STARTUP LOGIC ---
+    const handlePasscodeSubmit = () => {
+        const passcode = el.passcodeInput.value.trim();
+        if (passcode) validateAndLoadApp(passcode);
+    };
+    el.passcodeSubmitBtn.addEventListener("click", handlePasscodeSubmit);
+    el.passcodeInput.addEventListener("keypress", e => e.key === "Enter" && handlePasscodeSubmit());
+    </script>
+</body>
+</html>
