@@ -3,18 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>World Out Fashion</title>
-    <!-- Tailwind CSS CDN -->
+    <title>World Out Fashion - Order Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SweetAlert2 for beautiful pop-ups -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* UPDATED: Faster Animated Aurora Background */
         @keyframes moveInCircle { 0% { transform: rotate(0deg); } 50% { transform: rotate(180deg); } 100% { transform: rotate(360deg); } }
         @keyframes moveVertical { 0% { transform: translateY(-50%); } 50% { transform: translateY(50%); } 100% { transform: translateY(-50%); } }
         @keyframes moveHorizontal { 0% { transform: translateX(-50%); } 50% { transform: translateX(50%); } 100% { transform: translateX(-50%); } }
-        body { background-color: #000; overflow: hidden; }
-        .background-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; transition: filter 0.5s ease-in-out; }
+        body { background-color: #000; font-family:'Inter',sans-serif; }
+        .background-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; transition: filter 0.5s ease-in-out; }
         .shape { position: absolute; filter: blur(150px); }
         .shape-1 { background-color: #005f73; height: 500px; width: 500px; top: -150px; left: -150px; border-radius: 50%; animation: moveInCircle 15s ease-in-out infinite alternate; }
         .shape-2 { background-color: #0a9396; height: 400px; width: 400px; top: 50vh; left: 60vw; border-radius: 50%; animation: moveVertical 22s ease-in-out infinite alternate; }
@@ -22,39 +19,34 @@
         .shape-4 { background-color: #ee9b00; height: 250px; width: 250px; top: 70vh; left: 10vw; border-radius: 50%; animation: moveInCircle 18s ease-in-out infinite alternate; }
         .shape-5 { background-color: #ae2012; height: 300px; width: 300px; top: -100px; left: 70vw; border-radius: 50%; animation: moveVertical 25s ease-in-out infinite alternate; }
         
-        /* NEW: Blur effect for background */
-        .blurred { filter: blur(8px); }
+        #passcode-modal { display: flex; align-items: center; justify-content: center; position: fixed; inset: 0; background-color:rgba(0,0,0,.7); backdrop-filter: blur(8px); z-index: 999; }
+        #main-app { display: none; }
         
-        .main-content-container { position: relative; z-index: 1; height: 100vh; width: 100vw; display: flex; align-items: center; justify-content: center; overflow-y: auto; }
-        #passcode-modal { z-index: 10; }
         .card{background-color:rgba(10,10,20,.7);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1)}
         .delete-barcode-btn{background:#c53030;color:#fff;border:none;border-radius:50%;width:24px;height:24px;line-height:24px;text-align:center;cursor:pointer;font-weight:700;margin-left:1rem;transition:background .2s;font-size:16px;padding-bottom:2px}.delete-barcode-btn:hover{background:#e53e3e}
         
         .overflow-y-auto::-webkit-scrollbar{width:8px}.overflow-y-auto::-webkit-scrollbar-track{background:#2d3748}.overflow-y-auto::-webkit-scrollbar-thumb{background:#4a5568;border-radius:10px}.status-message{transition:all .5s ease-in-out;overflow:hidden;max-height:0;padding:0;margin-top:0;opacity:0}.status-message.show{max-height:100px;padding:.5rem;margin-top:.75rem;opacity:1}.auto-save-status{opacity:0;transition:opacity .5s ease;color:#48bb78}.auto-save-status.show{opacity:1}.text-primary{color:#e2e8f0}.text-secondary{color:#a0aec0}.bg-card-section{background-color:rgba(45,55,72,.5)}.border-theme{border-color:rgba(255,255,255,.1)}.btn-primary{background-color:#4299e1;color:#fff}.btn-primary:hover{background-color:#2b6cb0}.btn-secondary{background-color:#4a5568;color:#e2e8f0;border:1px solid #718096}.btn-secondary:hover{background-color:#2d3748}.btn-danger{background-color:#e53e3e;color:#fff}.btn-danger:hover{background-color:#c53030}.btn-info{background-color:#5a67d8;color:#fff}.btn-info:hover{background-color:#4c51bf}.btn-success{background-color:#38a169;color:#fff}.btn-success:hover{background-color:#2f855a}input,select,textarea{background-color:#1a202c;border-color:#4a5568;color:#e2e8f0}input::placeholder,textarea::placeholder{color:#718096}input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.8);cursor:pointer}
         .swal2-popup{background-color:#1a202c!important;color:#e2e8f0!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:1rem!important}.swal2-title{color:#e2e8f0!important}.swal2-html-container{color:#a0aec0!important}.swal2-confirm,.swal2-cancel{border-radius:.5rem!important}
         
-        /* UPDATED: Print Layout with column-fill */
-        @media print{body>*:not(#print-area){display:none!important}#print-area{display:block!important;position:absolute;left:0;top:0;width:100%;padding:1cm;box-sizing:border-box;font-family:'Arial',sans-serif;color:#000;background-color:#fff}.no-print{display:none!important}#print-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:15px}.print-company-name{font-size:16pt;font-weight:700}.print-date-time{font-size:10pt}#print-details-container,#printCustomNote{display:none}#printBarcodeList{font-size:9pt;padding:0;margin:0;column-count:5;column-gap:15px;height:auto;column-fill:auto}#printBarcodeList>div{break-inside:avoid;page-break-inside:avoid;padding:2px 0;white-space:nowrap}.print-footer{display:none!important}}
+        @media print{body>*{display:none!important}#print-area{display:block!important;position:absolute;left:0;top:0;width:100%;padding:1cm;box-sizing:border-box;font-family:'Arial',sans-serif;color:#000;background-color:#fff}.no-print{display:none!important}#print-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:15px}.print-company-name{font-size:16pt;font-weight:700}.print-date-time{font-size:10pt}#print-details-container,#printCustomNote{display:none}#printBarcodeList{font-size:9pt;padding:0;margin:0;column-count:5;column-gap:15px;height:auto;column-fill:auto}#printBarcodeList>div{break-inside:avoid;page-break-inside:avoid;padding:2px 0;white-space:nowrap}.print-footer{display:none!important}}
     </style>
 </head>
 <body>
     <!-- Background Container -->
-    <div class="background-container blurred"> <div class="shape shape-1"></div> <div class="shape shape-2"></div> <div class="shape shape-3"></div> <div class="shape shape-4"></div> <div class="shape shape-5"></div> </div>
+    <div class="background-container"> <div class="shape shape-1"></div> <div class="shape shape-2"></div> <div class="shape shape-3"></div> <div class="shape shape-4"></div> <div class="shape shape-5"></div> </div>
     
-    <div class="main-content-container">
-        <!-- Passcode Modal -->
-        <div id="passcode-modal" class="fixed inset-0 flex items-center justify-center"><div class="card p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center"><h2 class="text-2xl font-bold mb-4 text-primary">Enter Passcode</h2><p class="text-secondary mb-6">Please enter the passcode to access the application.</p><input type="password" id="passcodeInput" inputmode="numeric" pattern="[0-9]*" class="w-full p-3 mb-4 text-center text-lg border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" autocomplete="off" /><button id="passcodeSubmitBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary">Enter</button><p id="passcode-error" class="text-red-400 mt-4 h-4"></p></div></div>
-        
-        <!-- Main Application Body -->
-        <div id="main-app" class="card p-6 lg:p-8 rounded-2xl shadow-2xl w-full max-w-7xl no-print"><div class="flex justify-between items-center mb-6 flex-wrap gap-4"><h1 class="text-2xl lg:text-3xl font-extrabold"><span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-400">Order Management System</span></h1><div id="live-clock" class="text-xl lg:text-2xl font-bold text-slate-300 order-3 lg:order-2 w-full lg:w-auto text-center"></div></div><div class="flex flex-col lg:flex-row gap-8 mt-4"><div class="w-full lg:w-3/5 flex flex-col gap-y-6"><p class="text-center text-secondary -mt-2">Scan order items.</p><div class="p-4 bg-blue-900/30 rounded-lg border border-blue-700/50 text-center shadow-md"><p class="text-xl font-semibold text-blue-200">Unique Barcodes: <span id="uniqueOrderCount" class="text-purple-400 text-2xl font-bold">0</span></p></div><div><div class="flex flex-col sm:flex-row gap-4"><input type="text" id="orderScanInput" placeholder="Barcode number..." class="flex-grow p-3 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200 shadow-sm" /><button id="addOrderBarcodeBtn" class="px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary">Scan</button></div><div id="statusMessage" class="status-message rounded-lg text-center font-semibold p-2"></div></div><div><h2 class="text-2xl font-bold text-primary mb-4 border-b border-theme pb-2">Scanned Barcodes</h2><div id="orderListContainer" class="bg-card-section p-4 rounded-lg border border-theme max-h-60 lg:max-h-96 overflow-y-auto shadow-inner"><ul id="scannedOrderBarcodesList" class="space-y-2"><p id="noOrderBarcodesMessage" class="text-secondary text-center py-4">No barcodes scanned.</p></ul></div></div><button id="clearCurrentOrderBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-secondary">Clear Current Order</button></div><div class="w-full lg:w-2/5 flex flex-col gap-y-8"><div class="p-6 bg-card-section rounded-xl border border-theme shadow-inner h-fit"><h2 class="text-2xl font-bold text-primary mb-4 border-b border-theme pb-2">Export & Customize</h2><button id="printScannedOrderBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-info">Print Order (A4)</button><button id="downloadCsvBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-success">Download CSV</button></div><div class="p-6 bg-card-section rounded-xl border border-theme shadow-inner h-fit"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold text-primary border-b border-theme pb-2">Load Previous Orders</h2><span id="autoSaveStatus" class="auto-save-status font-semibold">✓ Saved</span></div><div class="mb-4"><label for="searchByDate" class="block mb-2 text-sm font-medium text-secondary">Search by Date</label><div class="flex gap-2"><input type="date" id="searchByDate" class="w-full p-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"><button id="resetDateFilterBtn" class="px-4 py-2 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-secondary text-xs">Reset</button></div></div><div class="flex flex-col sm:flex-row gap-4"><select id="savedSessionsSelect" class="flex-grow p-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"><option value="">Select a saved session</option></select><button id="loadSelectedSessionBtn" class="px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary">Load</button></div><button id="deleteSelectedSessionBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-danger">Delete</button></div></div></div></div>
-    </div>
+    <!-- Passcode Modal -->
+    <div id="passcode-modal"><div class="card p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center"><h2 class="text-2xl font-bold mb-4 text-primary">Enter Passcode</h2><p class="text-secondary mb-6">Please enter the passcode to access the application.</p><input type="password" id="passcodeInput" inputmode="numeric" pattern="[0-9]*" class="w-full p-3 mb-4 text-center text-lg border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" autocomplete="off" /><button id="passcodeSubmitBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary">Enter</button><p id="passcode-error" class="text-red-400 mt-4 h-4"></p></div></div>
+    
+    <!-- Main Application Body -->
+    <div id="main-app" class="p-4"><div class="card p-6 lg:p-8 rounded-2xl shadow-2xl w-full max-w-7xl no-print"><div class="flex justify-between items-center mb-6 flex-wrap gap-4"><h1 class="text-2xl lg:text-3xl font-extrabold"><span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-400">Order Management System</span></h1><div id="live-clock" class="text-xl lg:text-2xl font-bold text-slate-300 order-3 lg:order-2 w-full lg:w-auto text-center"></div></div><div class="flex flex-col lg:flex-row gap-8 mt-4"><div class="w-full lg:w-3/5 flex flex-col gap-y-6"><p class="text-center text-secondary -mt-2">Scan order items.</p><div class="p-4 bg-blue-900/30 rounded-lg border border-blue-700/50 text-center shadow-md"><p class="text-xl font-semibold text-blue-200">Unique Barcodes: <span id="uniqueOrderCount" class="text-purple-400 text-2xl font-bold">0</span></p></div><div><div class="flex flex-col sm:flex-row gap-4"><input type="text" id="orderScanInput" placeholder="Barcode number..." class="flex-grow p-3 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200 shadow-sm" /><button id="addOrderBarcodeBtn" class="px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary">Scan</button></div><div id="statusMessage" class="status-message rounded-lg text-center font-semibold p-2"></div></div><div><h2 class="text-2xl font-bold text-primary mb-4 border-b border-theme pb-2">Scanned Barcodes</h2><div id="orderListContainer" class="bg-card-section p-4 rounded-lg border border-theme max-h-60 lg:max-h-96 overflow-y-auto shadow-inner"><ul id="scannedOrderBarcodesList" class="space-y-2"><p id="noOrderBarcodesMessage" class="text-secondary text-center py-4">No barcodes scanned.</p></ul></div></div><button id="clearCurrentOrderBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-secondary">Clear Current Order</button></div><div class="w-full lg:w-2/5 flex flex-col gap-y-8"><div class="p-6 bg-card-section rounded-xl border border-theme shadow-inner h-fit"><h2 class="text-2xl font-bold text-primary mb-4 border-b border-theme pb-2">Export & Customize</h2><button id="printScannedOrderBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-info">Print Order (A4)</button><button id="downloadCsvBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-success">Download CSV</button></div><div class="p-6 bg-card-section rounded-xl border border-theme shadow-inner h-fit"><div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold text-primary border-b border-theme pb-2">Load Previous Orders</h2><span id="autoSaveStatus" class="auto-save-status font-semibold">✓ Saved</span></div><div class="mb-4"><label for="searchByDate" class="block mb-2 text-sm font-medium text-secondary">Search by Date</label><div class="flex gap-2"><input type="date" id="searchByDate" class="w-full p-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"><button id="resetDateFilterBtn" class="px-4 py-2 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-secondary text-xs">Reset</button></div></div><div class="flex flex-col sm:flex-row gap-4"><select id="savedSessionsSelect" class="flex-grow p-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"><option value="">Select a saved session</option></select><button id="loadSelectedSessionBtn" class="px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary">Load</button></div><button id="deleteSelectedSessionBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-danger">Delete</button></div></div></div></div></div>
     
     <!-- Print Area -->
     <div id="print-area" class="hidden"> <div id="print-header"> <div class="print-company-name">WORLD OUT FASHION</div> <div class="print-date-time"></div> </div> <div id="printBarcodeList"></div> </div>
 
     <!-- Audio elements for sound effects -->
-    <audio id="success-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" preload="auto"></audio>
-    <audio id="error-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-game-show-wrong-answer-buzz-950.mp3" preload="auto"></audio>
+    <audio id="success-sound" src="https://github.com/sandaruwanS/sound-effects/raw/main/success.mp3" preload="auto"></audio>
+    <audio id="error-sound" src="https://github.com/sandaruwanS/sound-effects/raw/main/error.mp3" preload="auto"></audio>
 
     <script>
     // --- GLOBAL VARIABLES & ELEMENT SELECTORS ---
@@ -109,9 +101,7 @@
             
             userPasscode = passcode;
             allSessions = data;
-            el.backgroundContainer.classList.remove('blurred');
             el.passcodeModal.style.display = 'none';
-            document.querySelector(".main-content-container").style.overflowY = 'auto';
             document.body.style.overflow = 'auto';
             el.mainApp.style.display = 'block';
             initializeMainApp();
@@ -171,7 +161,6 @@
     function deleteSingleBarcode(barcode) {
         if (scannedUniqueBarcodes.has(barcode)) {
             scannedUniqueBarcodes.delete(barcode);
-            if (scannedUniqueBarcodes.size === 0) currentSessionId = null;
             renderPermanentBarcodes();
             autoSaveSession();
         }
@@ -189,11 +178,13 @@
             });
             el.autoSaveStatus.classList.add("show");
             setTimeout(() => el.autoSaveStatus.classList.remove("show"), 2000);
+            
             const sessionIndex = allSessions.findIndex(s => s.id === currentSessionId);
-            if(sessionIndex > -1) allSessions[sessionIndex].data.uniqueBarcodes = barcodesArray;
-            else {
+            if(sessionIndex > -1) {
+                allSessions[sessionIndex].data.uniqueBarcodes = barcodesArray;
+            } else {
                 allSessions.push({ id: currentSessionId, name: sessionName, createdAt: parseInt(currentSessionId), data: { uniqueBarcodes: barcodesArray } });
-                populateSessionsDropdown(allSessions);
+                filterSessionsByDate();
             }
         } catch (error) { console.error('Save Error:', error); }
     }
@@ -253,6 +244,7 @@
             option.textContent = session.name;
             el.savedSessionsSelect.appendChild(option);
         });
+        el.savedSessionsSelect.value = currentSessionId;
     }
     
     function filterSessionsByDate() {
@@ -305,7 +297,6 @@
         URL.revokeObjectURL(link.href);
     }
 
-    // --- STARTUP LOGIC ---
     const handlePasscodeSubmit = () => {
         const passcode = el.passcodeInput.value.trim();
         if (passcode) validateAndLoadApp(passcode);
