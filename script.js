@@ -1,5 +1,5 @@
 // --- CONFIGURATION ---
-// PASTE YOUR NEW DEPLOYMENT URL FROM STEP 2 HERE
+// Your new deployment URL has been updated here.
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwH3SzkimLj5whWj1POTmzdjNOU8niTNmFlMA1WGJoNtOmjNvXZhu0m60cLBG4qX6gr/exec"; 
 
 // --- GLOBAL VARIABLES ---
@@ -46,16 +46,20 @@ async function validateAndLoadApp(passcode) {
         const url = `${WEB_APP_URL}?passcode=${encodeURIComponent(passcode)}&t=${new Date().getTime()}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Network validation failed: ${response.statusText}`);
+        
         const data = await response.json();
-        if (data.status === 'error') throw new Error(data.message);
+        if (data.status === 'error') {
+            throw new Error(data.message);
+        }
         
         userPasscode = passcode;
         el.passcodeModal.style.display = "none";
         document.body.style.overflow = "auto";
         el.mainApp.style.display = "flex";
         await initializeMainApp();
+
     } catch (error) {
-        el.passcodeError.textContent = error.message;
+        el.passcodeError.textContent = `Login Failed: ${error.message}`;
         el.passcodeSubmitBtn.disabled = false;
         el.passcodeSubmitBtn.textContent = "Enter";
     }
@@ -79,8 +83,8 @@ function attachEventListeners() {
     el.downloadCsvBtn.addEventListener("click", downloadCsv);
     el.loadDateBtn.addEventListener('click', () => loadBarcodesForDate(el.searchByDate.value));
     el.loadTodayBtn.addEventListener('click', () => loadBarcodesForDate(getTodayDateString(), true));
-    el.passcodeSubmitBtn.addEventListener("click", handlePasscodeSubmit);
-    el.passcodeInput.addEventListener("keypress", e => e.key === "Enter" && handlePasscodeSubmit);
+    el.passcodeSubmitBtn.addEventListener("click", () => handlePasscodeSubmit());
+    el.passcodeInput.addEventListener("keypress", e => e.key === "Enter" && handlePasscodeSubmit());
     el.scannedOrderBarcodesList.addEventListener('click', (e) => {
         if (e.target && e.target.classList.contains('delete-barcode-btn')) {
             deleteSingleBarcode(e.target.dataset.barcode);
@@ -88,7 +92,7 @@ function attachEventListeners() {
     });
 }
 
-// --- DATA HANDLING (IMPROVED ERROR HANDLING) ---
+// --- DATA HANDLING ---
 async function loadBarcodesForDate(dateString, isToday = false) {
     if (!dateString) {
         Swal.fire("No Date Selected", "Please select a date from the calendar to load.", "warning");
@@ -100,9 +104,11 @@ async function loadBarcodesForDate(dateString, isToday = false) {
     try {
         const url = `${WEB_APP_URL}?passcode=${userPasscode}&action=loadDate&date=${dateString}`;
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+        if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
+        
         const data = await response.json();
         if (data.status === 'error') throw new Error(data.message);
+        
         scannedUniqueBarcodes = new Set(data.barcodes || []);
         deletedBarcodes.clear();
         renderPermanentBarcodes();
@@ -114,7 +120,6 @@ async function loadBarcodesForDate(dateString, isToday = false) {
     }
 }
 
-// --- IMPROVED SAVE FUNCTION ---
 async function logBarcodeToSheet(barcode) {
     el.autoSaveStatus.textContent = "Saving...";
     el.autoSaveStatus.style.color = '#e2e8f0';
@@ -127,21 +132,15 @@ async function logBarcodeToSheet(barcode) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: "logBarcode", passcode: userPasscode, barcode, timestamp: new Date().toISOString() })
         });
-
-        if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
-        }
-
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+        
         const result = await response.json();
-
-        if (result.status === 'error') {
-            throw new Error(result.message);
-        }
-
+        if (result.status === 'error') throw new Error(result.message);
+        
         el.autoSaveStatus.textContent = "✓ Saved";
         el.autoSaveStatus.style.color = '#48bb78';
     } catch (error) {
-        console.error("Save Failed:", error); // Log detailed error to the browser console
+        console.error("Save Failed:", error);
         el.autoSaveStatus.textContent = "Save Failed!";
         el.autoSaveStatus.style.color = '#e53e3e';
     } finally {
@@ -149,7 +148,6 @@ async function logBarcodeToSheet(barcode) {
     }
 }
 
-// --- UI & SCANNING LOGIC ---
 function handleAutoScan() {
     clearTimeout(barcodeScanTimeout);
     if (el.orderScanInput.value.trim().length > 5) {
@@ -210,7 +208,6 @@ function updateUIForView() {
     el.orderScanInput.placeholder = isReadOnly ? "Viewing past data (read-only)" : "Scan or type barcode...";
 }
 
-// --- UTILITY FUNCTIONS ---
 function showDeletedBarcodes() {
     if (deletedBarcodes.size === 0) {
         Swal.fire("Empty!", "No items have been removed from the current view.", "info");
@@ -224,7 +221,7 @@ function showDeletedBarcodes() {
 
 function showStatusMessage(message, type) {
     el.statusMessage.textContent = message;
-    el.statusMessage.className = `status-message rounded-lg text-center font-semibold p-2 ${type === "success" ? "bg-green-800 text-green-200" : "bg-red-800 text-red-200" : "bg-blue-800 text-blue-200"}`;
+    el.statusMessage.className = `status-message rounded-lg text-center font-semibold p-2 ${type === "success" ? "bg-green-800 text-green-200" : type === "error" ? "bg-red-800 text-red-200" : "bg-blue-800 text-blue-200"}`;
     el.statusMessage.classList.add("show");
     setTimeout(() => el.statusMessage.classList.remove("show"), 2500);
 }
@@ -249,7 +246,7 @@ function printScannedOrder() {
 }
 
 function downloadCsv() {
-    if (scannedUniqueBarcodes.size === 0) return Swal.fire({ title: "Empty!", text: "There are no barcodes to download.", icon: "warning" });
+    if (scannedUniqueBarcodes.size === 0) return Swal.fire({ title: "Empty!", text: "There are no barcodes to download.", icon_warning: "warning" });
     const dateSuffix = isTodayView ? getTodayDateString() : el.searchByDate.value;
     const csvContent = "Barcode\n" + Array.from(scannedUniqueBarcodes).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
