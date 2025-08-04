@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>World Out Fashion - Order Management V3</title>
+    <title>World Out Fashion - Order Management V4</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -37,9 +37,9 @@
             <div class="flex flex-col lg:flex-row gap-8 mt-4">
                 <!-- Left Column -->
                 <div class="w-full lg:w-3/5 flex flex-col gap-y-6">
-                    <p class="text-center text-secondary -mt-2">Scan order items.</p>
+                    <p class="text-center text-secondary -mt-2">Scan order items for today.</p>
                     <div class="p-4 bg-blue-900/30 rounded-lg border border-blue-700/50 text-center shadow-md">
-                        <p class="text-xl font-semibold text-blue-200">Unique Barcodes: <span id="uniqueOrderCount" class="text-purple-400 text-2xl font-bold">0</span></p>
+                        <p class="text-xl font-semibold text-blue-200">Unique Barcodes in View: <span id="uniqueOrderCount" class="text-purple-400 text-2xl font-bold">0</span></p>
                     </div>
                     <div>
                         <div class="flex flex-col sm:flex-row gap-4">
@@ -57,9 +57,8 @@
                             </ul>
                         </div>
                     </div>
-                    <button id="clearCurrentOrderBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-secondary">Clear Current Order</button>
                 </div>
-                <!-- Right Column (Reverted to original session management) -->
+                <!-- Right Column -->
                 <div class="w-full lg:w-2/5 flex flex-col gap-y-8">
                     <div class="p-6 bg-card-section rounded-xl border border-theme shadow-inner h-fit">
                         <h2 class="text-2xl font-bold text-primary mb-4 border-b border-theme pb-2">Export & Tools</h2>
@@ -67,16 +66,18 @@
                         <button id="printScannedOrderBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-info">Print Order (A4)</button>
                         <button id="downloadCsvBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-success">Download CSV</button>
                     </div>
+                    
                     <div class="p-6 bg-card-section rounded-xl border border-theme shadow-inner h-fit">
                         <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-2xl font-bold text-primary border-b border-theme pb-2">Load Previous Orders</h2>
-                            <span id="autoSaveStatus" class="auto-save-status font-semibold">✓ Saved</span>
+                            <h2 class="text-2xl font-bold text-primary border-b border-theme pb-2">Load Past Scans</h2>
+                            <span id="autoSaveStatus" class="auto-save-status font-semibold"></span>
                         </div>
-                         <!-- Date filter removed, session dropdown restored -->
-                        <select id="savedSessionsSelect" class="w-full p-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500">
-                            <option value="">Select a session to load</option>
-                        </select>
-                        <button id="deleteSelectedSessionBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-danger">Delete</button>
+                        <div class="mb-4">
+                            <label for="searchByDate" class="block mb-2 text-sm font-medium text-secondary">Select a date to view</label>
+                            <input type="date" id="searchByDate" class="w-full p-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500">
+                        </div>
+                        <button id="loadDateBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary">Load Selected Date</button>
+                        <button id="loadTodayBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-secondary">Back to Today's Scans</button>
                     </div>
                 </div>
             </div>
