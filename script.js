@@ -1,6 +1,6 @@
 // --- CONFIGURATION ---
-// <<<--- මෙතනට ඔබ පියවර 2 දී copy කරගත් අලුත්ම URL එක යොදන්න ---<<<
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw7xaz71aqBNd9A57csVXfAMzQWEMnH9tJa5gAv26zvUssHC3ty8u8_Wy9wvZIutLFw/exec/exec"; 
+// ඔබ ලබාදුන් අලුත්ම URL එක මෙහි යාවත්කාලීන කර ඇත.
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzrOfeWfnpOKnDWNoAxWS3Ql-_-GfPQ8M3Yt4Oir-EmqCqDK5CSkipuGlsQ57oaNzPa/exec"; 
 
 // --- GLOBAL VARIABLES ---
 let scannedUniqueBarcodes = new Set();
@@ -43,7 +43,8 @@ async function validateAndLoadApp(passcode) {
     el.passcodeSubmitBtn.disabled = true;
     el.passcodeSubmitBtn.textContent = "Checking...";
     try {
-        const url = `${WEB_APP_URL}?passcode=${encodeURIComponent(passcode)}&t=${new Date().getTime()}`;
+        // The validation URL now includes an 'action' parameter
+        const url = `${WEB_APP_URL}?action=validate&passcode=${encodeURIComponent(passcode)}&t=${new Date().getTime()}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error(`Network validation failed: ${response.statusText}`);
         
@@ -71,28 +72,57 @@ async function initializeMainApp() {
     el.orderScanInput.focus();
 }
 
-function attachEventListeners() {
-    el.orderScanInput.addEventListener("keypress", e => e.key === "Enter" && handleOrderScan());
-    el.orderScanInput.addEventListener("input", handleAutoScan);
-    el.addOrderBarcodeBtn.addEventListener("click", handleOrderScan);
-    el.searchScannedInput.addEventListener("input", renderPermanentBarcodes);
-    el.showDeletedBtn.addEventListener('click', showDeletedBarcodes);
-    el.printScannedOrderBtn.addEventListener("click", printScannedOrder);
-    el.downloadCsvBtn.addEventListener("click", downloadCsv);
-    el.loadDateBtn.addEventListener('click', () => loadBarcodesForDate(el.searchByDate.value));
-    el.loadTodayBtn.addEventListener('click', () => loadBarcodesForDate(getTodayDateString(), true));
-    el.passcodeSubmitBtn.addEventListener("click", () => handlePasscodeSubmit());
-    el.passcodeInput.addEventListener("keypress", e => e.key === "Enter" && handlePasscodeSubmit());
-    el.scannedOrderBarcodesList.addEventListener('click', (e) => {
-        if (e.target && e.target.classList.contains('delete-barcode-btn')) {
-            deleteSingleBarcode(e.target.dataset.barcode);
-        }
-    });
+// --- DATA HANDLING (All requests now use GET method) ---
+async function loadBarcodesForDate(dateString, isToday = false) {
+    if (!dateString) { Swal.fire("No Date", "Please select a date.", "warning"); return; }
+    isTodayView = isToday;
+    updateUIForView();
+    Swal.fire({ title: 'Loading...', text: `Fetching scans for ${dateString}`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    try {
+        const url = `${WEB_APP_URL}?action=loadDate&passcode=${userPasscode}&date=${dateString}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Network error: ${response.statusText}`);
+        const data = await response.json();
+        if (data.status === 'error') throw new Error(data.message);
+        scannedUniqueBarcodes = new Set(data.barcodes || []);
+        deletedBarcodes.clear();
+        renderPermanentBarcodes();
+        Swal.close();
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'Failed to Load', text: error.message });
+        scannedUniqueBarcodes.clear();
+        renderPermanentBarcodes();
+    }
 }
 
-// All other functions are correct and remain the same.
-async function loadBarcodesForDate(dateString, isToday = false) {if (!dateString) {Swal.fire("No Date Selected", "Please select a date from the calendar to load.", "warning"); return; } isTodayView = isToday; updateUIForView(); Swal.fire({ title: 'Loading Data...', text: `Fetching scans for ${dateString}`, allowOutsideClick: false, didOpen: () => Swal.showLoading() }); try { const url = `${WEB_APP_URL}?passcode=${userPasscode}&action=loadDate&date=${dateString}`; const response = await fetch(url); if (!response.ok) throw new Error(`Network error: ${response.statusText}`); const data = await response.json(); if (data.status === 'error') throw new Error(data.message); scannedUniqueBarcodes = new Set(data.barcodes || []); deletedBarcodes.clear(); renderPermanentBarcodes(); Swal.close(); } catch (error) { Swal.fire({ icon: 'error', title: 'Failed to Load', text: error.message }); scannedUniqueBarcodes.clear(); renderPermanentBarcodes(); } }
-async function logBarcodeToSheet(barcode) { el.autoSaveStatus.textContent = "Saving..."; el.autoSaveStatus.style.color = '#e2e8f0'; el.autoSaveStatus.classList.add('show'); try { const response = await fetch(WEB_APP_URL, { method: "POST", mode: "cors", cache: "no-cache", redirect: "follow", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "logBarcode", passcode: userPasscode, barcode, timestamp: new Date().toISOString() }) }); const responseText = await response.text(); if (!response.ok) { throw new Error(`HTTP Error: ${response.status}. Response: ${responseText}`); } const result = JSON.parse(responseText); if (result.status === 'error') { throw new Error(result.message); } el.autoSaveStatus.textContent = "✓ Saved"; el.autoSaveStatus.style.color = '#48bb78'; } catch (error) { console.error("Save Failed Detailed Error:", error); el.autoSaveStatus.textContent = "Save Failed!"; el.autoSaveStatus.style.color = '#e53e3e'; Swal.fire({ icon: 'error', title: 'Save Failed', text: `Could not save. Error: ${error.message}` }); } finally { setTimeout(() => el.autoSaveStatus.classList.remove('show'), 4000); } }
+async function logBarcodeToSheet(barcode) {
+    el.autoSaveStatus.textContent = "Saving...";
+    el.autoSaveStatus.style.color = '#e2e8f0';
+    el.autoSaveStatus.classList.add('show');
+    try {
+        // Construct the URL with parameters for a GET request
+        const url = `${WEB_APP_URL}?action=logBarcode&passcode=${userPasscode}&barcode=${encodeURIComponent(barcode)}&t=${new Date().getTime()}`;
+        
+        const response = await fetch(url, { method: "GET", mode: "cors", cache: "no-cache" });
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+        
+        const result = await response.json();
+        if (result.status === 'error') throw new Error(result.message);
+        
+        el.autoSaveStatus.textContent = "✓ Saved";
+        el.autoSaveStatus.style.color = '#48bb78';
+    } catch (error) {
+        console.error("Save Failed Detailed Error:", error);
+        el.autoSaveStatus.textContent = "Save Failed!";
+        el.autoSaveStatus.style.color = '#e53e3e';
+        Swal.fire({ icon: 'error', title: 'Save Failed', text: `Could not save. Error: ${error.message}` });
+    } finally {
+        setTimeout(() => el.autoSaveStatus.classList.remove('show'), 3000);
+    }
+}
+
+// All other functions are attached below for completeness.
+function attachEventListeners(){el.orderScanInput.addEventListener("keypress",e=>"Enter"===e.key&&handleOrderScan());el.orderScanInput.addEventListener("input",handleAutoScan);el.addOrderBarcodeBtn.addEventListener("click",handleOrderScan);el.searchScannedInput.addEventListener("input",renderPermanentBarcodes);el.showDeletedBtn.addEventListener("click",showDeletedBarcodes);el.printScannedOrderBtn.addEventListener("click",printScannedOrder);el.downloadCsvBtn.addEventListener("click",downloadCsv);el.loadDateBtn.addEventListener("click",()=>loadBarcodesForDate(el.searchByDate.value));el.loadTodayBtn.addEventListener("click",()=>loadBarcodesForDate(getTodayDateString(),!0));el.passcodeSubmitBtn.addEventListener("click",()=>handlePasscodeSubmit());el.passcodeInput.addEventListener("keypress",e=>"Enter"===e.key&&handlePasscodeSubmit());el.scannedOrderBarcodesList.addEventListener("click",e=>{e.target&&e.target.classList.contains("delete-barcode-btn")&&deleteSingleBarcode(e.target.dataset.barcode)})}
 function handleAutoScan(){clearTimeout(barcodeScanTimeout);if(el.orderScanInput.value.trim().length>5){barcodeScanTimeout=setTimeout(()=>handleOrderScan(),400)}}
 function handleOrderScan(){const e=el.orderScanInput.value.trim();if(!e)return;clearTimeout(barcodeScanTimeout);if(!isTodayView){Swal.fire("Read-Only View","You are viewing a past date. Switch to 'Today's Scans' to add new barcodes.","warning");el.orderScanInput.value="";return}if(scannedUniqueBarcodes.has(e)){el.errorSound.play();showStatusMessage(`Already Scanned Today: ${e}`,"error")}else{scannedUniqueBarcodes.add(e);el.successSound.play();renderPermanentBarcodes();showStatusMessage(`Success: ${e}`,"success");logBarcodeToSheet(e)}el.orderScanInput.value="";el.orderScanInput.focus()}
 function renderPermanentBarcodes(){const e=el.searchScannedInput.value.toLowerCase();el.scannedOrderBarcodesList.innerHTML="";const t=Array.from(scannedUniqueBarcodes).filter(t=>t.toLowerCase().includes(e)).reverse();el.noOrderBarcodesMessage.style.display=t.length>0?"none":"block";t.forEach(e=>{const t=document.createElement("li");t.className="flex items-center justify-between p-2 rounded-md shadow-sm border text-lg font-medium bg-gray-700/50 border-gray-600/50 text-gray-200 list-item-enter";const a=isTodayView?`<button class="delete-barcode-btn no-print" data-barcode="${e}" title="Remove from view">×</button>`:"";t.innerHTML=`<span>${e}</span>${a}`;el.scannedOrderBarcodesList.appendChild(t)});el.uniqueOrderCount.textContent=scannedUniqueBarcodes.size}
