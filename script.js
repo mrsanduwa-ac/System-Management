@@ -1,5 +1,4 @@
 // --- CONFIGURATION ---
-// Your new deployment URL has been updated here.
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwH3SzkimLj5whWj1POTmzdjNOU8niTNmFlMA1WGJoNtOmjNvXZhu0m60cLBG4qX6gr/exec"; 
 
 // --- GLOBAL VARIABLES ---
@@ -48,9 +47,7 @@ async function validateAndLoadApp(passcode) {
         if (!response.ok) throw new Error(`Network validation failed: ${response.statusText}`);
         
         const data = await response.json();
-        if (data.status === 'error') {
-            throw new Error(data.message);
-        }
+        if (data.status === 'error') throw new Error(data.message);
         
         userPasscode = passcode;
         el.passcodeModal.style.display = "none";
@@ -120,6 +117,7 @@ async function loadBarcodesForDate(dateString, isToday = false) {
     }
 }
 
+// --- IMPROVED SAVE FUNCTION WITH BETTER LOGGING ---
 async function logBarcodeToSheet(barcode) {
     el.autoSaveStatus.textContent = "Saving...";
     el.autoSaveStatus.style.color = '#e2e8f0';
@@ -128,25 +126,42 @@ async function logBarcodeToSheet(barcode) {
         const response = await fetch(WEB_APP_URL, {
             method: "POST",
             mode: "cors",
-            cache: "no-cache",
+            cache: "no-cache", // Prevents browser from caching the response
+            redirect: "follow", // Follow any redirects from Apps Script
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: "logBarcode", passcode: userPasscode, barcode, timestamp: new Date().toISOString() })
         });
-        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         
-        const result = await response.json();
-        if (result.status === 'error') throw new Error(result.message);
+        // Log the raw response text for debugging
+        const responseText = await response.text();
+        console.log("Raw Server Response:", responseText);
+
+        if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}. Response: ${responseText}`);
+        }
+        
+        // Try to parse the text as JSON
+        const result = JSON.parse(responseText);
+        
+        if (result.status === 'error') {
+            throw new Error(result.message);
+        }
         
         el.autoSaveStatus.textContent = "✓ Saved";
         el.autoSaveStatus.style.color = '#48bb78';
+
     } catch (error) {
-        console.error("Save Failed:", error);
+        // Log the detailed error to the browser console for inspection
+        console.error("Save Failed Detailed Error:", error);
         el.autoSaveStatus.textContent = "Save Failed!";
         el.autoSaveStatus.style.color = '#e53e3e';
+        // Show a more descriptive error to the user
+        Swal.fire({ icon: 'error', title: 'Save Failed', text: `Could not save to Google Sheet. Please check console for details. Error: ${error.message}` });
     } finally {
         setTimeout(() => el.autoSaveStatus.classList.remove('show'), 3000);
     }
 }
+
 
 function handleAutoScan() {
     clearTimeout(barcodeScanTimeout);
@@ -246,7 +261,7 @@ function printScannedOrder() {
 }
 
 function downloadCsv() {
-    if (scannedUniqueBarcodes.size === 0) return Swal.fire({ title: "Empty!", text: "There are no barcodes to download.", icon_warning: "warning" });
+    if (scannedUniqueBarcodes.size === 0) return Swal.fire({ title: "Empty!", text: "There are no barcodes to download.", icon: "warning" });
     const dateSuffix = isTodayView ? getTodayDateString() : el.searchByDate.value;
     const csvContent = "Barcode\n" + Array.from(scannedUniqueBarcodes).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
