@@ -1,6 +1,6 @@
 // --- CONFIGURATION ---
-// ඔබ ලබාදුන් අලුත්ම සහ නිවැරදි URL එක මෙහි යොදා ඇත.
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxGp7SZyDElAg2ATKL7XCo_vOXMlRYO96_-Ar3-aLAFEhYKMDPPQ_WM5Cndh_L7yvja/exec"; 
+// <<<--- මෙතනට ඔබ පියවර 2 දී copy කරගත් අලුත්ම URL එක යොදන්න ---<<<
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzQrShfwoTYV8t9zF7ECgFv0xnLPdozl3NhFXnm_w5zIPwBuWUQQEuCK9CVF4GCHZDE/exec"; 
 
 // --- GLOBAL VARIABLES ---
 let scannedUniqueBarcodes = new Set();
@@ -71,25 +71,6 @@ async function initializeMainApp() {
     el.orderScanInput.focus();
 }
 
-function attachEventListeners() {
-    el.orderScanInput.addEventListener("keypress", e => e.key === "Enter" && handleOrderScan());
-    el.orderScanInput.addEventListener("input", handleAutoScan);
-    el.addOrderBarcodeBtn.addEventListener("click", handleOrderScan);
-    el.searchScannedInput.addEventListener("input", renderPermanentBarcodes);
-    el.showDeletedBtn.addEventListener('click', showDeletedBarcodes);
-    el.printScannedOrderBtn.addEventListener("click", printScannedOrder);
-    el.downloadCsvBtn.addEventListener("click", downloadCsv);
-    el.loadDateBtn.addEventListener('click', () => loadBarcodesForDate(el.searchByDate.value));
-    el.loadTodayBtn.addEventListener('click', () => loadBarcodesForDate(getTodayDateString(), true));
-    el.passcodeSubmitBtn.addEventListener("click", () => handlePasscodeSubmit());
-    el.passcodeInput.addEventListener("keypress", e => e.key === "Enter" && handlePasscodeSubmit());
-    el.scannedOrderBarcodesList.addEventListener('click', (e) => {
-        if (e.target && e.target.classList.contains('delete-barcode-btn')) {
-            deleteSingleBarcode(e.target.dataset.barcode);
-        }
-    });
-}
-
 // --- DATA HANDLING (Using POST for saving) ---
 async function loadBarcodesForDate(dateString, isToday = false) {
     if (!dateString) { Swal.fire("No Date", "Please select a date.", "warning"); return; }
@@ -143,6 +124,8 @@ async function logBarcodeToSheet(barcode) {
     }
 }
 
+// All other functions are attached below for completeness.
+function attachEventListeners(){el.orderScanInput.addEventListener("keypress",e=>"Enter"===e.key&&handleOrderScan());el.orderScanInput.addEventListener("input",handleAutoScan);el.addOrderBarcodeBtn.addEventListener("click",handleOrderScan);el.searchScannedInput.addEventListener("input",renderPermanentBarcodes);el.showDeletedBtn.addEventListener("click",showDeletedBarcodes);el.printScannedOrderBtn.addEventListener("click",printScannedOrder);el.downloadCsvBtn.addEventListener("click",downloadCsv);el.loadDateBtn.addEventListener("click",()=>loadBarcodesForDate(el.searchByDate.value));el.loadTodayBtn.addEventListener("click",()=>loadBarcodesForDate(getTodayDateString(),!0));el.passcodeSubmitBtn.addEventListener("click",()=>handlePasscodeSubmit());el.passcodeInput.addEventListener("keypress",e=>"Enter"===e.key&&handlePasscodeSubmit());el.scannedOrderBarcodesList.addEventListener("click",e=>{e.target&&e.target.classList.contains("delete-barcode-btn")&&deleteSingleBarcode(e.target.dataset.barcode)})}
 function handleAutoScan(){clearTimeout(barcodeScanTimeout);if(el.orderScanInput.value.trim().length>5){barcodeScanTimeout=setTimeout(()=>handleOrderScan(),400)}}
 function handleOrderScan(){const e=el.orderScanInput.value.trim();if(!e)return;clearTimeout(barcodeScanTimeout);if(!isTodayView){Swal.fire("Read-Only View","You are viewing a past date. Switch to 'Today's Scans' to add new barcodes.","warning");el.orderScanInput.value="";return}if(scannedUniqueBarcodes.has(e)){el.errorSound.play();showStatusMessage(`Already Scanned Today: ${e}`,"error")}else{scannedUniqueBarcodes.add(e);el.successSound.play();renderPermanentBarcodes();showStatusMessage(`Success: ${e}`,"success");logBarcodeToSheet(e)}el.orderScanInput.value="";el.orderScanInput.focus()}
 function renderPermanentBarcodes(){const e=el.searchScannedInput.value.toLowerCase();el.scannedOrderBarcodesList.innerHTML="";const t=Array.from(scannedUniqueBarcodes).filter(t=>t.toLowerCase().includes(e)).reverse();el.noOrderBarcodesMessage.style.display=t.length>0?"none":"block";t.forEach(e=>{const t=document.createElement("li");t.className="flex items-center justify-between p-2 rounded-md shadow-sm border text-lg font-medium bg-gray-700/50 border-gray-600/50 text-gray-200 list-item-enter";const a=isTodayView?`<button class="delete-barcode-btn no-print" data-barcode="${e}" title="Remove from view">×</button>`:"";t.innerHTML=`<span>${e}</span>${a}`;el.scannedOrderBarcodesList.appendChild(t)});el.uniqueOrderCount.textContent=scannedUniqueBarcodes.size}
