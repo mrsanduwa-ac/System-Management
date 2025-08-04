@@ -1,16 +1,14 @@
 // --- CONFIGURATION ---
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby2JfJzXO2T3zWxhael5bSwzDIcqDHL0Qs4-dnzOjbOuIQL7EMZXpN1i3lWdeNeluSp/exec"; // Replace with your URL
 
-// --- GLOBAL VARIABLES (Reverted to session-based model) ---
+// --- GLOBAL VARIABLES ---
 let scannedUniqueBarcodes = new Set();
-let deletedBarcodes = new Set();
-let currentSessionId = null;
+let deletedBarcodes = new Set(); // To track items removed from the current view only
 let userPasscode = null;
-let allSessions = [];
-let saveTimeout = null;
 let barcodeScanTimeout = null;
+let isTodayView = true; // Track if we are viewing today's scans or a past date
 
-// --- ELEMENT CACHE (Reverted) ---
+// --- ELEMENT CACHE ---
 const el = {
     mainApp: document.getElementById("main-app"),
     passcodeModal: document.getElementById("passcode-modal"),
@@ -24,12 +22,11 @@ const el = {
     addOrderBarcodeBtn: document.getElementById("addOrderBarcodeBtn"),
     scannedOrderBarcodesList: document.getElementById("scannedOrderBarcodesList"),
     noOrderBarcodesMessage: document.getElementById("noOrderBarcodesMessage"),
-    orderListContainer: document.getElementById("orderListContainer"),
-    clearCurrentOrderBtn: document.getElementById("clearCurrentOrderBtn"),
     printScannedOrderBtn: document.getElementById("printScannedOrderBtn"),
     downloadCsvBtn: document.getElementById("downloadCsvBtn"),
-    savedSessionsSelect: document.getElementById("savedSessionsSelect"),
-    deleteSelectedSessionBtn: document.getElementById("deleteSelectedSessionBtn"),
+    searchByDate: document.getElementById("searchByDate"),
+    loadDateBtn: document.getElementById("loadDateBtn"),
+    loadTodayBtn: document.getElementById("loadTodayBtn"),
     autoSaveStatus: document.getElementById("autoSaveStatus"),
     successSound: document.getElementById("success-sound"),
     errorSound: document.getElementById("error-sound"),
@@ -52,11 +49,10 @@ async function validateAndLoadApp(passcode) {
         if (data.error) throw new Error(data.error);
         
         userPasscode = passcode;
-        allSessions = data; // Load all session data from Drive
         el.passcodeModal.style.display = "none";
         document.body.style.overflow = "auto";
         el.mainApp.style.display = "flex";
-        initializeMainApp();
+        await initializeMainApp(); // Make it async to wait for initial load
     } catch (error) {
         el.passcodeError.textContent = error.message;
         el.passcodeSubmitBtn.disabled = false;
@@ -64,11 +60,12 @@ async function validateAndLoadApp(passcode) {
     }
 }
 
-function initializeMainApp() {
+async function initializeMainApp() {
     updateClock();
     setInterval(updateClock, 1000);
-    populateSessionsDropdown(allSessions);
     attachEventListeners();
+    // Automatically load today's data on startup
+    await loadBarcodesForDate(getTodayDateString(), true);
     el.orderScanInput.focus();
 }
 
@@ -76,13 +73,12 @@ function attachEventListeners() {
     el.orderScanInput.addEventListener("keypress", e => e.key === "Enter" && handleOrderScan());
     el.orderScanInput.addEventListener("input", handleAutoScan);
     el.addOrderBarcodeBtn.addEventListener("click", handleOrderScan);
-    el.savedSessionsSelect.addEventListener("change", loadSelectedSession);
-    el.deleteSelectedSessionBtn.addEventListener("click", deleteSelectedSession);
     el.searchScannedInput.addEventListener("input", renderPermanentBarcodes);
-    el.clearCurrentOrderBtn.addEventListener("click", clearCurrentOrder);
     el.showDeletedBtn.addEventListener('click', showDeletedBarcodes);
     el.printScannedOrderBtn.addEventListener("click", printScannedOrder);
     el.downloadCsvBtn.addEventListener("click", downloadCsv);
+    el.loadDateBtn.addEventListener('click', () => loadBarcodesForDate(el.searchByDate.value));
+    el.loadTodayBtn.addEventListener('click', () => loadBarcodesForDate(getTodayDateString(), true));
     el.passcodeSubmitBtn.addEventListener("click", handlePasscodeSubmit);
     el.passcodeInput.addEventListener("keypress", e => e.key === "Enter" && handlePasscodeSubmit);
     el.scannedOrderBarcodesList.addEventListener('click', (e) => {
@@ -92,7 +88,70 @@ function attachEventListeners() {
     });
 }
 
-// --- SCANNING & SAVING (Reverted to debounced batch saving) ---
+// --- DATA HANDLING ---
+async function loadBarcodesForDate(dateString, isToday = false) {
+    if (!dateString) {
+        Swal.fire("No Date Selected", "Please select a date from the calendar to load.", "warning");
+        return;
+    }
+
+    isTodayView = isToday; // Set the view state
+    updateUIForView(); // Update buttons and inputs based on the view
+
+    Swal.fire({
+        title: 'Loading Data...',
+        text: `Fetching all scans for ${dateString}`,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+        const url = `${WEB_APP_URL}?passcode=${userPasscode}&action=loadDate&date=${dateString}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network response was not ok.');
+        
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        scannedUniqueBarcodes = new Set(data.barcodes || []);
+        deletedBarcodes.clear();
+        renderPermanentBarcodes();
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Load Complete!',
+            text: `Found ${scannedUniqueBarcodes.size} barcodes for ${dateString}.`
+        });
+
+    } catch (error) {
+        Swal.fire({ icon: 'error', title: 'Failed to Load', text: error.message });
+        scannedUniqueBarcodes.clear(); // Clear view on error
+        renderPermanentBarcodes();
+    }
+}
+
+async function logBarcodeToSheet(barcode) {
+    el.autoSaveStatus.textContent = "Saving...";
+    el.autoSaveStatus.style.color = '#e2e8f0';
+    el.autoSaveStatus.classList.add('show');
+    try {
+        await fetch(WEB_APP_URL, {
+            method: "POST",
+            mode: "cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "logBarcode", passcode: userPasscode, barcode, timestamp: new Date().toISOString() })
+        });
+        el.autoSaveStatus.textContent = "✓ Saved";
+        el.autoSaveStatus.style.color = '#48bb78';
+    } catch (error) {
+        el.autoSaveStatus.textContent = "Save Failed!";
+        el.autoSaveStatus.style.color = '#e53e3e';
+    } finally {
+        setTimeout(() => el.autoSaveStatus.classList.remove('show'), 2000);
+    }
+}
+
+// --- UI & SCANNING LOGIC ---
 function handleAutoScan() {
     clearTimeout(barcodeScanTimeout);
     if (el.orderScanInput.value.trim().length > 5) {
@@ -105,67 +164,24 @@ function handleOrderScan() {
     if (!barcode) return;
     clearTimeout(barcodeScanTimeout);
 
-    if (scannedUniqueBarcodes.has(barcode) || deletedBarcodes.has(barcode)) {
+    if (!isTodayView) {
+        Swal.fire("Read-Only View", "You are viewing a past date. Please switch back to 'Today's Scans' to add new barcodes.", "warning");
+        el.orderScanInput.value = "";
+        return;
+    }
+
+    if (scannedUniqueBarcodes.has(barcode)) {
         el.errorSound.play();
-        showStatusMessage(`Already Scanned: ${barcode}`, "error");
+        showStatusMessage(`Already Scanned Today: ${barcode}`, "error");
     } else {
-        if (scannedUniqueBarcodes.size === 0 && !currentSessionId) {
-            currentSessionId = new Date().getTime().toString();
-        }
         scannedUniqueBarcodes.add(barcode);
         el.successSound.play();
         renderPermanentBarcodes();
         showStatusMessage(`Success: ${barcode}`, "success");
-        triggerDebouncedSave();
+        logBarcodeToSheet(barcode);
     }
     el.orderScanInput.value = "";
     el.orderScanInput.focus();
-}
-
-function triggerDebouncedSave() {
-    if (!currentSessionId) return;
-    clearTimeout(saveTimeout);
-    el.autoSaveStatus.textContent = "Saving...";
-    el.autoSaveStatus.classList.add('show');
-    saveTimeout = setTimeout(async () => {
-        const sessionName = `Session - ${getTimestamp(currentSessionId)}`;
-        try {
-            await fetch(WEB_APP_URL, {
-                method: "POST",
-                mode: "cors",
-                body: JSON.stringify({
-                    action: "saveBatch",
-                    passcode: userPasscode,
-                    sessionID: currentSessionId,
-                    sessionName,
-                    barcodes: Array.from(scannedUniqueBarcodes)
-                })
-            });
-            el.autoSaveStatus.textContent = "✓ Saved";
-        } catch (error) {
-            el.autoSaveStatus.textContent = "Save Failed!";
-        } finally {
-            setTimeout(() => el.autoSaveStatus.classList.remove('show'), 2000);
-        }
-    }, 1500);
-}
-
-// --- BARCODE & SESSION MANAGEMENT (Reverted) ---
-function loadSelectedSession() {
-    const sessionId = el.savedSessionsSelect.value;
-    if (!sessionId) { // If user selects the default "Select a session"
-        clearCurrentOrder(true); // Soft clear without confirmation
-        return;
-    }
-    
-    const session = allSessions.find(s => s.id === sessionId);
-    if (session) {
-        currentSessionId = session.id;
-        scannedUniqueBarcodes = new Set(session.data.uniqueBarcodes || []);
-        deletedBarcodes.clear();
-        renderPermanentBarcodes();
-        Swal.fire({ title: "Loaded!", text: `Session '${session.name}' has been loaded.`, icon: "success", timer: 1500 });
-    }
 }
 
 function renderPermanentBarcodes() {
@@ -180,114 +196,48 @@ function renderPermanentBarcodes() {
     barcodesToDisplay.forEach(barcode => {
         const li = document.createElement("li");
         li.className = "flex items-center justify-between p-2 rounded-md shadow-sm border text-lg font-medium bg-gray-700/50 border-gray-600/50 text-gray-200 list-item-enter";
-        li.innerHTML = `<span>${barcode}</span><button class="delete-barcode-btn no-print" data-barcode="${barcode}" title="Remove barcode">×</button>`;
+        const deleteBtnHTML = isTodayView ? `<button class="delete-barcode-btn no-print" data-barcode="${barcode}" title="Remove barcode (cannot be undone)">×</button>` : '';
+        li.innerHTML = `<span>${barcode}</span>${deleteBtnHTML}`;
         el.scannedOrderBarcodesList.appendChild(li);
     });
     el.uniqueOrderCount.textContent = scannedUniqueBarcodes.size;
 }
 
+// NOTE: This function does NOT delete from the Google Sheet. It only removes from the current view.
 function deleteSingleBarcode(barcode) {
-    if (scannedUniqueBarcodes.has(barcode)) {
-        scannedUniqueBarcodes.delete(barcode);
-        deletedBarcodes.add(barcode);
-        renderPermanentBarcodes();
-        showStatusMessage(`Moved to removed list: ${barcode}`, 'info');
-        triggerDebouncedSave();
-    }
-}
-
-async function clearCurrentOrder(isSoftClear = false) {
-    if (scannedUniqueBarcodes.size === 0 && deletedBarcodes.size === 0) return;
+    if (!isTodayView) return; // Should not happen as button is hidden, but as a safeguard.
     
-    let result = { isConfirmed: true }; // Assume confirmed for soft clear
-    if (!isSoftClear) {
-        result = await Swal.fire({ title: "Are you sure?", text: "This will clear all current and removed items, starting a new session.", icon: "warning", showCancelButton: true, confirmButtonText: "Yes, clear it!" });
-    }
-
-    if (result.isConfirmed) {
-        scannedUniqueBarcodes.clear();
-        deletedBarcodes.clear();
-        currentSessionId = null;
-        el.savedSessionsSelect.value = ""; // Reset dropdown
-        renderPermanentBarcodes();
-        if (!isSoftClear) {
-            Swal.fire({ title: "Cleared!", text: "You can now start a new session.", icon: "info", timer: 1500 });
-        }
-    }
+    // For this model, we'll just remove it from the view.
+    // A true "delete from sheet" would require more complex logic.
+    scannedUniqueBarcodes.delete(barcode);
+    deletedBarcodes.add(barcode);
+    renderPermanentBarcodes();
+    showStatusMessage(`Removed from view: ${barcode}`, 'info');
 }
 
-async function deleteSelectedSession() {
-    const sessionId = el.savedSessionsSelect.value;
-    if (!sessionId) return Swal.fire({ title: "Oops...", text: "Please select a session to delete.", icon: "warning" });
-    
-    const result = await Swal.fire({ title: "Are you sure?", text: "You won't be able to revert this!", icon: "warning", showCancelButton: true, confirmButtonColor: "#d33", confirmButtonText: "Yes, delete it!" });
-    
-    if (result.isConfirmed) {
-        try {
-            await fetch(WEB_APP_URL, {
-                method: "POST",
-                mode: "cors",
-                body: JSON.stringify({ action: "deleteSession", passcode: userPasscode, sessionID: sessionId })
-            });
-            Swal.fire({ title: "Deleted!", text: "The session has been deleted.", icon: "success", timer: 1500 });
-            
-            if (currentSessionId === sessionId) {
-                clearCurrentOrder(true); // Soft clear if the current session was deleted
-            }
-            
-            // Remove from local list and update dropdown
-            allSessions = allSessions.filter(s => s.id !== sessionId);
-            populateSessionsDropdown(allSessions);
-
-        } catch (e) {
-            Swal.fire("Error!", "Could not delete the session.", "error");
-        }
-    }
+function updateUIForView() {
+    const isReadOnly = !isTodayView;
+    el.orderScanInput.disabled = isReadOnly;
+    el.addOrderBarcodeBtn.disabled = isReadOnly;
+    el.orderScanInput.placeholder = isReadOnly ? "Viewing past data (read-only)" : "Scan or type barcode...";
+    el.searchByDate.value = isReadOnly ? el.searchByDate.value : getTodayDateString();
 }
 
-function populateSessionsDropdown(sessions) {
-    el.savedSessionsSelect.innerHTML = '<option value="">Select a session to load</option>';
-    sessions.sort((a, b) => b.createdAt - a.createdAt).forEach(session => {
-        const option = document.createElement("option");
-        option.value = session.id;
-        option.textContent = session.name;
-        el.savedSessionsSelect.appendChild(option);
-    });
-    el.savedSessionsSelect.value = currentSessionId;
-}
 
+// --- UTILITY FUNCTIONS ---
 function showDeletedBarcodes() {
     if (deletedBarcodes.size === 0) {
-        Swal.fire({ title: "Empty!", text: "There are no removed items.", icon: "info" });
+        Swal.fire("Empty!", "No items have been removed from the current view.", "info");
         return;
     }
     let deletedItemsHtml = '<ul class="text-left space-y-2 mt-4" style="max-height: 200px; overflow-y: auto;">';
     deletedBarcodes.forEach(barcode => {
-        deletedItemsHtml += `<li class="flex justify-between items-center p-2 bg-gray-700/50 rounded-md"><span>${barcode}</span> <button onclick="restoreBarcode('${barcode}')" class="btn-success px-2 py-1 rounded-md text-xs font-semibold">Restore</button></li>`;
+        deletedItemsHtml += `<li class="p-2 bg-gray-700/50 rounded-md">${barcode}</li>`;
     });
     deletedItemsHtml += '</ul>';
-    Swal.fire({
-        title: 'Removed Barcodes',
-        html: deletedItemsHtml,
-        confirmButtonText: 'Close',
-        width: '400px',
-        didOpen: () => {
-            window.restoreBarcode = (barcode) => {
-                if (deletedBarcodes.has(barcode)) {
-                    deletedBarcodes.delete(barcode);
-                    scannedUniqueBarcodes.add(barcode);
-                    renderPermanentBarcodes();
-                    triggerDebouncedSave();
-                    showStatusMessage(`Restored: ${barcode}`, 'success');
-                    Swal.close();
-                    setTimeout(showDeletedBarcodes, 200);
-                }
-            };
-        }
-    });
+    Swal.fire({ title: 'Removed From View (This Session)', html: deletedItemsHtml, confirmButtonText: 'Close' });
 }
 
-// --- UTILITY FUNCTIONS ---
 function showStatusMessage(message, type) {
     el.statusMessage.textContent = message;
     el.statusMessage.className = `status-message rounded-lg text-center font-semibold p-2 ${type === "success" ? "bg-green-800 text-green-200" : type === "error" ? "bg-red-800 text-red-200" : "bg-blue-800 text-blue-200"}`;
@@ -295,12 +245,16 @@ function showStatusMessage(message, type) {
     setTimeout(() => el.statusMessage.classList.remove("show"), 2500);
 }
 
-function updateClock() {
-    el.liveClock.textContent = new Date().toLocaleString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+function getTodayDateString() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
 }
 
-function getTimestamp(epoch) {
-    return new Date(parseInt(epoch, 10)).toLocaleString("en-US", { dateStyle: "short", timeStyle: "short", hour12: false });
+function updateClock() {
+    el.liveClock.textContent = new Date().toLocaleString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
 }
 
 function printScannedOrder() {
@@ -312,11 +266,12 @@ function printScannedOrder() {
 
 function downloadCsv() {
     if (scannedUniqueBarcodes.size === 0) return Swal.fire({ title: "Empty!", text: "There are no barcodes to download.", icon: "warning" });
+    const dateSuffix = isTodayView ? getTodayDateString() : el.searchByDate.value;
     const csvContent = "Barcode\n" + Array.from(scannedUniqueBarcodes).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `scanned_order_${Date.now()}.csv`;
+    link.download = `scanned_barcodes_${dateSuffix}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
 }
@@ -326,6 +281,8 @@ const handlePasscodeSubmit = () => {
     if (passcode) validateAndLoadApp(passcode);
 };
 
-// Initial call
-handlePasscodeSubmit();
-el.passcodeInput.addEventListener("keypress", e => e.key === "Enter" && handlePasscodeSubmit());
+// Initial setup for passcode modal
+if (el.passcodeModal) {
+    el.passcodeSubmitBtn.addEventListener("click", handlePasscodeSubmit);
+    el.passcodeInput.addEventListener("keypress", e => e.key === "Enter" && handlePasscodeSubmit);
+}
