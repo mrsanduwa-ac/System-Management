@@ -325,34 +325,66 @@ input::placeholder, textarea::placeholder {
   body {
     background: white !important;
     color: #111 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 12pt !important;
+    line-height: 1.4 !important;
   }
+  
   .barcode-grid {
     display: grid !important;
-    grid-template-columns: repeat(5, 1fr) !important;
-    gap: 10px !important;
-    font-size: 12px !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+    font-size: 10pt !important;
     background: transparent !important;
     color: #111 !important;
-    margin-top: 2em !important;
+    margin-top: 1em !important;
+    page-break-inside: avoid !important;
   }
+  
   .barcode-grid ul {
-    padding-left: 0;
-    list-style: none;
+    padding-left: 0 !important;
+    list-style: none !important;
+    margin: 0 !important;
   }
+  
   .barcode-grid li {
-    padding: 2px 0;
-    border-bottom: 1px dashed #ddd;
-    margin: 0 0 2px 0;
-    font-family: 'Fira Mono', monospace, monospace;
-    font-size: 13px;
+    padding: 3px 0 !important;
+    border-bottom: 1px solid #ccc !important;
+    margin: 0 0 3px 0 !important;
+    font-family: 'Courier New', monospace !important;
+    font-size: 9pt !important;
+    line-height: 1.2 !important;
+    page-break-inside: avoid !important;
   }
-  .print-header, .print-datetime {
+  
+  .print-header {
     display: block !important;
-    page-break-after: avoid;
+    page-break-after: avoid !important;
+    margin-bottom: 0.5em !important;
+    font-size: 18pt !important;
   }
+  
+  .print-datetime {
+    display: block !important;
+    page-break-after: avoid !important;
+    margin-bottom: 1em !important;
+    font-size: 12pt !important;
+  }
+  
+  /* Hide all non-print elements */
   #main-app, .card, .bg-card-section, .btn-primary, .btn-secondary, .btn-success, .btn-info,
-  #logoutBtn, #passcode-modal, #statusMessage, #downloadCsvBtn, #showDeletedBtn, #orderScanInput, #addOrderBarcodeBtn, #scannedOrderBarcodesList, #noOrderBarcodesMessage, #uniqueOrderCount, #totalScannedCount, #searchScannedInput, #loadBarcodesBtn, #saveBarcodesBtn, #loadDateBarcodesBtn, #barcodeDateFilter {
+  #logoutBtn, #passcode-modal, #statusMessage, #downloadCsvBtn, #showDeletedBtn, #orderScanInput, 
+  #addOrderBarcodeBtn, #scannedOrderBarcodesList, #noOrderBarcodesMessage, #uniqueOrderCount, 
+  #totalScannedCount, #searchScannedInput, #loadBarcodesBtn, #saveBarcodesBtn, #loadDateBarcodesBtn, 
+  #barcodeDateFilter, .star, #star-bg {
     display: none !important;
+  }
+  
+  /* A4 specific settings */
+  @page {
+    size: A4 !important;
+    margin: 1cm !important;
   }
 }
 
