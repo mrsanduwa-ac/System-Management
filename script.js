@@ -51,9 +51,80 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Move saveData above upgradeBarcodesFormat ---
   const saveData = () => {
-    localStorage.setItem("scannedBarcodes", JSON.stringify(scannedBarcodes));
-    localStorage.setItem("deletedBarcodes", JSON.stringify(deletedBarcodes));
+    try {
+      localStorage.setItem("scannedBarcodes", JSON.stringify(scannedBarcodes));
+      localStorage.setItem("deletedBarcodes", JSON.stringify(deletedBarcodes));
+      // Also save to sessionStorage as backup
+      sessionStorage.setItem("scannedBarcodes", JSON.stringify(scannedBarcodes));
+      sessionStorage.setItem("deletedBarcodes", JSON.stringify(deletedBarcodes));
+    } catch (error) {
+      console.error('Failed to save data:', error);
+      showStatus("Failed to save data", "error");
+    }
   };
+
+  // Enhanced data loading with fallbacks
+  const loadData = () => {
+    try {
+      // Try localStorage first
+      const storedBarcodes = localStorage.getItem("scannedBarcodes");
+      const storedDeleted = localStorage.getItem("deletedBarcodes");
+      
+      if (storedBarcodes) {
+        scannedBarcodes = JSON.parse(storedBarcodes);
+      } else {
+        // Fallback to sessionStorage
+        const sessionBarcodes = sessionStorage.getItem("scannedBarcodes");
+        if (sessionBarcodes) {
+          scannedBarcodes = JSON.parse(sessionBarcodes);
+        }
+      }
+      
+      if (storedDeleted) {
+        deletedBarcodes = JSON.parse(storedDeleted);
+      } else {
+        // Fallback to sessionStorage
+        const sessionDeleted = sessionStorage.getItem("deletedBarcodes");
+        if (sessionDeleted) {
+          deletedBarcodes = JSON.parse(sessionDeleted);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load data:', error);
+      scannedBarcodes = [];
+      deletedBarcodes = [];
+    }
+  };
+
+  // Data sync function for cross-device compatibility
+  const syncData = () => {
+    try {
+      // Sync between localStorage and sessionStorage
+      const localBarcodes = localStorage.getItem("scannedBarcodes");
+      const sessionBarcodes = sessionStorage.getItem("scannedBarcodes");
+      
+      if (localBarcodes && !sessionBarcodes) {
+        sessionStorage.setItem("scannedBarcodes", localBarcodes);
+      } else if (sessionBarcodes && !localBarcodes) {
+        localStorage.setItem("scannedBarcodes", sessionBarcodes);
+      }
+      
+      const localDeleted = localStorage.getItem("deletedBarcodes");
+      const sessionDeleted = sessionStorage.getItem("deletedBarcodes");
+      
+      if (localDeleted && !sessionDeleted) {
+        sessionStorage.setItem("deletedBarcodes", localDeleted);
+      } else if (sessionDeleted && !localDeleted) {
+        localStorage.setItem("deletedBarcodes", sessionDeleted);
+      }
+    } catch (error) {
+      console.error('Failed to sync data:', error);
+    }
+  };
+
+  // Load data on startup
+  loadData();
+  syncData();
 
   // --- Barcode entries now store date ---
   function getTodayYMD() {
