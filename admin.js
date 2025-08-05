@@ -7,20 +7,60 @@ function getTodayYMD() {
 function loadBarcodes() {
   let arr = [];
   try {
-    arr = JSON.parse(localStorage.getItem("scannedBarcodes")) || [];
-  } catch (e) { arr = []; }
+    // Try localStorage first
+    const stored = localStorage.getItem("scannedBarcodes");
+    if (stored) {
+      arr = JSON.parse(stored);
+    } else {
+      // Fallback to sessionStorage
+      const sessionStored = sessionStorage.getItem("scannedBarcodes");
+      if (sessionStored) {
+        arr = JSON.parse(sessionStored);
+      }
+    }
+  } catch (e) { 
+    console.error('Failed to load barcodes:', e);
+    arr = []; 
+  }
   // Upgrade for any legacy string format
   return arr.map(b => typeof b === "string"
     ? { code: b, date: getTodayYMD(), ts: new Date().toISOString() }
     : b
   );
 }
+
 function loadDeleted() {
   let arr = [];
   try {
-    arr = JSON.parse(localStorage.getItem("deletedBarcodes")) || [];
-  } catch (e) { arr = []; }
+    // Try localStorage first
+    const stored = localStorage.getItem("deletedBarcodes");
+    if (stored) {
+      arr = JSON.parse(stored);
+    } else {
+      // Fallback to sessionStorage
+      const sessionStored = sessionStorage.getItem("deletedBarcodes");
+      if (sessionStored) {
+        arr = JSON.parse(sessionStored);
+      }
+    }
+  } catch (e) { 
+    console.error('Failed to load deleted barcodes:', e);
+    arr = []; 
+  }
   return arr;
+}
+
+// Enhanced save function
+function saveBarcodes() {
+  try {
+    localStorage.setItem('scannedBarcodes', JSON.stringify(allBarcodes));
+    localStorage.setItem('deletedBarcodes', JSON.stringify(deletedBarcodes));
+    // Also save to sessionStorage as backup
+    sessionStorage.setItem('scannedBarcodes', JSON.stringify(allBarcodes));
+    sessionStorage.setItem('deletedBarcodes', JSON.stringify(deletedBarcodes));
+  } catch (error) {
+    console.error('Failed to save barcodes:', error);
+  }
 }
 
 const todayCountEl = document.getElementById("todayCount");
@@ -76,11 +116,11 @@ function renderTable(data) {
           const removeIdx = allBarcodes.findIndex(b => b.code === barcode.code && b.ts === barcode.ts);
           if (removeIdx !== -1) {
             allBarcodes.splice(removeIdx, 1);
-            localStorage.setItem('scannedBarcodes', JSON.stringify(allBarcodes));
+            saveBarcodes(); // Use enhanced save function
           }
           // Add to deletedBarcodes
           deletedBarcodes.push(barcode.code);
-          localStorage.setItem('deletedBarcodes', JSON.stringify(deletedBarcodes));
+          saveBarcodes(); // Use enhanced save function
           filteredBarcodes.splice(idx, 1);
           renderTable(filteredBarcodes);
           updateCounts();
@@ -206,7 +246,7 @@ function addBarcode(barcode) {
   const newBarcode = { code: barcode, date: getTodayYMD(), ts: new Date().toISOString() };
   // Add new barcode to the beginning of the array (top of list)
   allBarcodes.unshift(newBarcode);
-  localStorage.setItem('scannedBarcodes', JSON.stringify(allBarcodes));
+  saveBarcodes(); // Use enhanced save function
   filteredBarcodes = allBarcodes.slice();
   renderTable(filteredBarcodes);
   updateCounts();
