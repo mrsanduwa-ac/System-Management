@@ -1,0 +1,128 @@
+body {
+  background: linear-gradient(120deg, #0f172a 0%, #1e293b 100%);
+  min-height: 100vh;
+}
+
+.star-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.star-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: white;
+  opacity: 0.8;
+  width: 2px; height: 2px;
+  animation: starMove 20s linear infinite;
+}
+
+@keyframes starMove {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(100vh); }
+}
+
+.max-w-6xl {
+  z-index: 5;
+  position: relative;
+}
+
+.bg-slate-800 {
+  background: rgba(30, 41, 59, 0.95) !important;
+  backdrop-filter: blur(6px);
+  border: 1px solid #334155;
+}
+
+.rounded {
+  border-radius: 1.25rem !important;
+}
+
+.shadow {
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+input[type="date"], input[type="text"] {
+  min-width: 150px;
+  outline: none;
+  font-size: 1rem;
+  color: #334155;
+}
+
+input[type="date"]:focus, input[type="text"]:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px #3b82f688;
+}
+
+button {
+  transition: transform 0.12s cubic-bezier(.4,2,.6,1), box-shadow 0.12s;
+  box-shadow: 0 1px 6px 0 rgba(59, 130, 246, 0.08);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+.btn-primary { background: #3b82f6; color: white; }
+.btn-success { background: #10b981; color: white; }
+.btn-info { background: #0ea5e9; color: white; }
+.btn-secondary { background: #64748b; color: white; }
+.btn-primary:hover { background: #2563eb; }
+.btn-success:hover { background: #059669; }
+.btn-info:hover { background: #0369a1; }
+.btn-secondary:hover { background: #475569; }
+
+table {
+  border-radius: 1rem !important;
+  overflow: hidden;
+}
+
+th, td {
+  font-family: 'Fira Mono', 'Consolas', monospace;
+  transition: background 0.2s;
+}
+
+th {
+  background: #334155;
+  color: #60a5fa;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+}
+
+tr:hover td {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  background: #1e293b;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 6px;
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white !important;
+    color: #111 !important;
+  }
+  .star-bg, #logoutBtn, #viewDeletedBtn, #exportCsvBtn, #exportJsonBtn, #printBtn, #loadDataBtn, #reloadBtn, #searchInput, #filterDate {
+    display: none !important;
+  }
+  table {
+    color: #222 !important;
+    background: transparent !important;
+    border: none !important;
+  }
+  th, td {
+    color: #222 !important;
+    background: transparent !important;
+  }
+  img[alt="Logo"] {
+    display: none !important;
+  }
+}
