@@ -46,20 +46,55 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadDateBarcodesBtn = document.getElementById("loadDateBarcodesBtn");
   const clearHomeListBtn = document.getElementById("clearHomeListBtn");
 
+  // Enhanced: Cross-device transfer elements
+  const exportDataBtn = document.getElementById("exportDataBtn");
+  const importDataBtn = document.getElementById("importDataBtn");
+  const importDataInput = document.getElementById("importDataInput");
+
   let scannedBarcodes = JSON.parse(localStorage.getItem("scannedBarcodes")) || [];
   let deletedBarcodes = JSON.parse(localStorage.getItem("deletedBarcodes")) || [];
 
   // --- Move saveData above upgradeBarcodesFormat ---
-  const saveData = () => {
+  const saveData = (showStatusMessage = true) => {
     try {
       localStorage.setItem("scannedBarcodes", JSON.stringify(scannedBarcodes));
       localStorage.setItem("deletedBarcodes", JSON.stringify(deletedBarcodes));
       // Also save to sessionStorage as backup
       sessionStorage.setItem("scannedBarcodes", JSON.stringify(scannedBarcodes));
       sessionStorage.setItem("deletedBarcodes", JSON.stringify(deletedBarcodes));
+      
+      // Enhanced: Save to multiple storage locations for better cross-device sync
+      try {
+        // Try IndexedDB for larger storage capacity
+        if ('indexedDB' in window) {
+          const request = indexedDB.open('BarcodeApp', 1);
+          request.onupgradeneeded = function() {
+            const db = request.result;
+            if (!db.objectStoreNames.contains('barcodes')) {
+              db.createObjectStore('barcodes', { keyPath: 'id' });
+            }
+          };
+          request.onsuccess = function() {
+            const db = request.result;
+            const transaction = db.transaction(['barcodes'], 'readwrite');
+            const store = transaction.objectStore('barcodes');
+            store.put({ id: 'scannedBarcodes', data: scannedBarcodes });
+            store.put({ id: 'deletedBarcodes', data: deletedBarcodes });
+          };
+        }
+      } catch (indexedDBError) {
+        console.log('IndexedDB not available, using localStorage only');
+      }
+      
+      // Auto-save indicator only if requested
+      if (showStatusMessage) {
+        showStatus("Data saved automatically", "success");
+      }
     } catch (error) {
       console.error('Failed to save data:', error);
-      showStatus("Failed to save data", "error");
+      if (showStatusMessage) {
+        showStatus("Failed to save data", "error");
+      }
     }
   };
 
@@ -89,6 +124,31 @@ document.addEventListener("DOMContentLoaded", () => {
           deletedBarcodes = JSON.parse(sessionDeleted);
         }
       }
+      
+      // Enhanced: Try IndexedDB as additional fallback
+      if ('indexedDB' in window && scannedBarcodes.length === 0) {
+        const request = indexedDB.open('BarcodeApp', 1);
+        request.onsuccess = function() {
+          const db = request.result;
+          const transaction = db.transaction(['barcodes'], 'readonly');
+          const store = transaction.objectStore('barcodes');
+          const scannedRequest = store.get('scannedBarcodes');
+          const deletedRequest = store.get('deletedBarcodes');
+          
+          scannedRequest.onsuccess = function() {
+            if (scannedRequest.result && scannedRequest.result.data) {
+              scannedBarcodes = scannedRequest.result.data;
+              updateView();
+            }
+          };
+          
+          deletedRequest.onsuccess = function() {
+            if (deletedRequest.result && deletedRequest.result.data) {
+              deletedBarcodes = deletedRequest.result.data;
+            }
+          };
+        };
+      }
     } catch (error) {
       console.error('Failed to load data:', error);
       scannedBarcodes = [];
@@ -96,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Data sync function for cross-device compatibility
+  // Enhanced data sync function for cross-device compatibility
   const syncData = () => {
     try {
       // Sync between localStorage and sessionStorage
@@ -117,14 +177,96 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (sessionDeleted && !localDeleted) {
         localStorage.setItem("deletedBarcodes", sessionDeleted);
       }
+      
+      // Enhanced: Sync with IndexedDB
+      if ('indexedDB' in window) {
+        const request = indexedDB.open('BarcodeApp', 1);
+        request.onsuccess = function() {
+          const db = request.result;
+          const transaction = db.transaction(['barcodes'], 'readwrite');
+          const store = transaction.objectStore('barcodes');
+          
+          // Update IndexedDB with current data
+          store.put({ id: 'scannedBarcodes', data: scannedBarcodes });
+          store.put({ id: 'deletedBarcodes', data: deletedBarcodes });
+        };
+      }
     } catch (error) {
       console.error('Failed to sync data:', error);
     }
   };
 
+  // Auto-save functionality
+  const autoSave = () => {
+    saveData(false); // Don't show status message for auto-save
+    showAutoSaveStatus("Auto-saved");
+    // Schedule next auto-save
+    setTimeout(autoSave, 30000); // Auto-save every 30 seconds
+  };
+
+  // Enhanced data export for cross-device transfer
+  const exportDataForTransfer = () => {
+    const exportData = {
+      scannedBarcodes: scannedBarcodes,
+      deletedBarcodes: deletedBarcodes,
+      exportDate: new Date().toISOString(),
+      version: '1.0'
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `barcode-data-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showStatus("Data exported for transfer", "success");
+  };
+
+  // Enhanced data import for cross-device transfer
+  const importDataFromTransfer = (file) => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const importData = JSON.parse(e.target.result);
+        
+        if (importData.scannedBarcodes && Array.isArray(importData.scannedBarcodes)) {
+          // Merge imported data with existing data, avoiding duplicates
+          const existingCodes = new Set(scannedBarcodes.map(b => b.code));
+          const newBarcodes = importData.scannedBarcodes.filter(b => !existingCodes.has(b.code));
+          
+          if (newBarcodes.length > 0) {
+            scannedBarcodes.unshift(...newBarcodes);
+            showStatus(`${newBarcodes.length} new barcodes imported`, "success");
+          } else {
+            showStatus("No new barcodes to import", "info");
+          }
+        }
+        
+        if (importData.deletedBarcodes && Array.isArray(importData.deletedBarcodes)) {
+          deletedBarcodes.push(...importData.deletedBarcodes);
+        }
+        
+        saveData();
+        updateView();
+      } catch (error) {
+        showStatus("Invalid import file format", "error");
+      }
+    };
+    reader.readAsText(file);
+  };
+
   // Load data on startup
   loadData();
   syncData();
+  
+  // Start auto-save functionality
+  autoSave();
 
   // --- Barcode entries now store date ---
   function getTodayYMD() {
@@ -181,11 +323,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const showStatus = (message, type) => {
     statusMsg.textContent = message;
-    statusMsg.className = `text-center text-sm mt-2 ${type === "error" ? "text-red-400" : "text-green-400"}`;
+    statusMsg.className = `text-center text-sm mt-2 ${type === "error" ? "text-red-400" : type === "success" ? "text-green-400" : type === "info" ? "text-blue-400" : "text-yellow-400"}`;
     setTimeout(() => {
       statusMsg.textContent = "";
       statusMsg.className = "text-center text-sm mt-2";
     }, 3000);
+  };
+
+  // Enhanced status for auto-save (shorter duration)
+  const showAutoSaveStatus = (message) => {
+    const originalText = statusMsg.textContent;
+    const originalClass = statusMsg.className;
+    
+    statusMsg.textContent = message;
+    statusMsg.className = "text-center text-sm mt-2 text-green-400";
+    
+    setTimeout(() => {
+      statusMsg.textContent = originalText;
+      statusMsg.className = originalClass;
+    }, 1500);
   };
 
   // Always play Apple Pay sound on success
@@ -289,6 +445,24 @@ document.addEventListener("DOMContentLoaded", () => {
     showStatus("Barcodes saved!", "success");
   });
 
+  // --- Enhanced Cross-Device Data Transfer ---
+  exportDataBtn.addEventListener('click', exportDataForTransfer);
+  
+  importDataBtn.addEventListener('click', () => importDataInput.click());
+  
+  importDataInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    
+    if (file.name.endsWith('.json')) {
+      importDataFromTransfer(file);
+    } else {
+      showStatus("Please select a JSON file", "error");
+    }
+    
+    importDataInput.value = "";
+  });
+
   // --- Date-based search and load ---
   barcodeDateFilter.value = getTodayYMD();
   barcodeDateFilter.max = getTodayYMD();
@@ -343,6 +517,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const perCol = 30;
     for (let col = 0; col < columns; col++) {
       const ul = document.createElement('ul');
+      ul.style.cssText = 'margin: 0; padding: 0; list-style: none;';
       for (let row = 0; row < perCol; row++) {
         const idx = col * perCol + row;
         if (idx < toPrint.length) {
@@ -350,6 +525,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // Reverse numbering: newest entries get higher numbers
           const displayNumber = toPrint.length - idx;
           li.textContent = `${displayNumber}. ${toPrint[idx].code}`;
+          li.style.cssText = 'padding: 4px 0; border-bottom: 1px solid #ddd; margin: 0 0 4px 0; font-family: "Courier New", monospace; font-size: 9pt; line-height: 1.3; word-break: break-all;';
           ul.appendChild(li);
         }
       }
