@@ -333,29 +333,32 @@ input::placeholder, textarea::placeholder {
   
   .barcode-grid {
     display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 8px !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 12px !important;
     font-size: 10pt !important;
     background: transparent !important;
     color: #111 !important;
     margin-top: 1em !important;
     page-break-inside: avoid !important;
+    max-width: 100% !important;
   }
   
   .barcode-grid ul {
     padding-left: 0 !important;
     list-style: none !important;
     margin: 0 !important;
+    page-break-inside: avoid !important;
   }
   
   .barcode-grid li {
-    padding: 3px 0 !important;
-    border-bottom: 1px solid #ccc !important;
-    margin: 0 0 3px 0 !important;
+    padding: 4px 0 !important;
+    border-bottom: 1px solid #ddd !important;
+    margin: 0 0 4px 0 !important;
     font-family: 'Courier New', monospace !important;
     font-size: 9pt !important;
-    line-height: 1.2 !important;
+    line-height: 1.3 !important;
     page-break-inside: avoid !important;
+    word-break: break-all !important;
   }
   
   .print-header {
@@ -363,6 +366,7 @@ input::placeholder, textarea::placeholder {
     page-break-after: avoid !important;
     margin-bottom: 0.5em !important;
     font-size: 18pt !important;
+    font-weight: bold !important;
   }
   
   .print-datetime {
@@ -384,7 +388,43 @@ input::placeholder, textarea::placeholder {
   /* A4 specific settings */
   @page {
     size: A4 !important;
-    margin: 1cm !important;
+    margin: 1.5cm !important;
+  }
+  
+  /* Ensure proper page breaks */
+  .barcode-grid ul {
+    orphans: 3 !important;
+    widows: 3 !important;
+  }
+  
+  /* Better spacing for print */
+  .barcode-grid {
+    column-gap: 15px !important;
+    row-gap: 8px !important;
+  }
+  
+  /* Ensure proper text wrapping */
+  .barcode-grid li {
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
+    hyphens: auto !important;
+  }
+  
+  /* Prevent orphaned items */
+  .barcode-grid ul {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Better header spacing */
+  .print-header {
+    margin-bottom: 0.3em !important;
+    line-height: 1.2 !important;
+  }
+  
+  .print-datetime {
+    margin-bottom: 0.8em !important;
+    line-height: 1.3 !important;
   }
 }
 
