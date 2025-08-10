@@ -79,7 +79,8 @@
             <div class="space-y-4">
                 <div>
                     <label for="passcodeInput" class="block mb-2 text-sm font-medium text-secondary">Passcode</label>
-                    <input type="password" id="passcodeInput" class="w-full p-3 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200 shadow-sm" placeholder="••••••••">
+                    <!-- වෙනස්කම: inputmode="numeric" එකතු කරන ලදී -->
+                    <input type="password" id="passcodeInput" class="w-full p-3 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200 shadow-sm" placeholder="••••••••" inputmode="numeric">
                 </div>
                 <button id="loginButton" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary">
                     Login
@@ -107,7 +108,6 @@
                 <p id="scanOrderDescription" class="text-center text-secondary -mt-2"></p>
                 <div class="p-4 bg-blue-900/30 rounded-lg border border-blue-700/50 text-center shadow-md">
                     <p class="text-xl font-semibold text-blue-200">
-                        <!-- Total Scanned කියන එකට වෙනස් කරන ලදී -->
                         <span id="uniqueOrderCountLabel"></span>:
                         <span id="uniqueOrderCount" class="text-purple-400 text-2xl font-bold">0</span>
                     </p>
@@ -180,9 +180,7 @@
     </div>
 
     <script>
-        const CORRECT_PASSCODE = '9131'; 
-        
-        // --- වෙනස්කම 1: දත්ත ගබඩා කිරීමට Array එකක් භාවිතා කිරීම ---
+        const CORRECT_PASSCODE = '1234'; 
         let scannedBarcodes = [];
         let currentSessionId = null;
 
@@ -222,12 +220,12 @@
             liveClock: document.getElementById("live-clock"),
         };
 
-        const LOCAL_STORAGE_KEY = 'barcodeApp_savedSessions_v7'; // Version changed
+        const LOCAL_STORAGE_KEY = 'barcodeApp_savedSessions_v7'; 
 
         function setInitialTexts() {
             el.appTitle.textContent = "Order Management System";
             el.scanOrderDescription.textContent = "Scan order items.";
-            el.uniqueOrderCountLabel.textContent = "Total Scanned"; // ලේබලය වෙනස් කරන ලදී
+            el.uniqueOrderCountLabel.textContent = "Total Scanned";
             el.addOrderBarcodeBtn.textContent = "Scan";
             el.scannedOrderTitle.textContent = "Scanned Barcodes";
             el.noOrderBarcodesMessage.textContent = "No barcodes scanned.";
@@ -295,26 +293,23 @@
             setTimeout(() => el.statusMessage.classList.remove('show'), 2500);
         }
         
-        // --- වෙනස්කම 2: ලැයිස්තුව render කරන ආකාරය සම්පූර්ණයෙන්ම වෙනස් කිරීම ---
         function renderPermanentBarcodes() {
             el.scannedOrderBarcodesList.innerHTML = "";
             const hasBarcodes = scannedBarcodes.length > 0;
             el.noOrderBarcodesMessage.style.display = hasBarcodes ? 'none' : 'block';
             
             if (hasBarcodes) {
-                // Array එකේ ඇති පිළිවෙලටම (නවතම එක මුලින්) පෙන්වීම
                 scannedBarcodes.forEach((barcode, index) => {
                     const listItem = document.createElement("li");
                     listItem.className = "flex items-center justify-between p-2 rounded-md shadow-sm border text-lg font-medium bg-gray-700/50 border-gray-600/50 text-gray-200";
                     
-                    // අනුක්‍රමික අංකය ගණනය කිරීම
                     const scanNumber = scannedBarcodes.length - index;
 
                     const leftDiv = document.createElement('div');
                     leftDiv.className = 'flex items-center';
                     
                     const numberSpan = document.createElement('span');
-                    numberSpan.className = "font-bold text-blue-300 w-10 text-left"; // අංකයට නියමිත ඉඩක්
+                    numberSpan.className = "font-bold text-blue-300 w-10 text-left";
                     numberSpan.textContent = `#${scanNumber}`;
                     
                     const barcodeSpan = document.createElement('span');
@@ -326,7 +321,7 @@
                     const deleteBtn = document.createElement('button');
                     deleteBtn.textContent = "Delete";
                     deleteBtn.className = "btn-danger px-3 py-1 text-xs rounded-md font-semibold transition transform hover:scale-105";
-                    deleteBtn.onclick = () => handleDeleteSingleBarcode(barcode);
+                    deleteBtn.onclick = () => handleDeleteSingleBarcode(scanNumber - 1); // Pass the correct index
 
                     listItem.appendChild(leftDiv);
                     listItem.appendChild(deleteBtn);
@@ -334,27 +329,24 @@
                 });
                 el.orderListContainer.scrollTop = 0;
             }
-            // "Total Scanned" ගණන යාවත්කාලීන කිරීම
             el.uniqueOrderCount.textContent = scannedBarcodes.length;
         }
 
-        function handleDeleteSingleBarcode(barcodeToDelete) {
-            // Array එකෙන් අදාළ බාර්කෝඩ් එක ඉවත් කිරීම
-            scannedBarcodes = scannedBarcodes.filter(barcode => barcode !== barcodeToDelete);
+        function handleDeleteSingleBarcode(reverseIndex) {
+            // The actual index in the array is calculated from the reverse order
+            const actualIndex = scannedBarcodes.length - 1 - reverseIndex;
+            scannedBarcodes.splice(actualIndex, 1);
             renderPermanentBarcodes();
             autoSaveSession();
         }
 
-        // --- වෙනස්කම 3: බාර්කෝඩ් ඇතුලත් කිරීමේ ක්‍රියාවලිය යාවත්කාලීන කිරීම ---
         function handleOrderScanAddBarcode() {
             const barcode = el.orderScanInput.value.trim();
             if (barcode === "") return;
             
-            // එකම බාර්කෝඩ් එක නැවත ඇතුළත් කළ නොහැකි ලෙස සකස් කිරීම
             if (scannedBarcodes.includes(barcode)) {
                 showStatusMessage(`Already Scanned: ${barcode}`, "error");
             } else {
-                // අලුත් බාර්කෝඩ් එක Array එකේ මුලටම එකතු කිරීම
                 scannedBarcodes.unshift(barcode);
                 showStatusMessage(`Success: ${barcode}`, "success");
                 
@@ -372,7 +364,6 @@
             el.orderScanInput.focus();
         }
         
-        // --- වෙනස්කම 4: දත්ත save සහ load කිරීමේ ක්‍රියාවලිය යාවත්කාලීන කිරීම ---
         async function autoSaveSession() {
             try {
                 let sessions = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
@@ -406,7 +397,6 @@
             const session = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]").find(s => s.id === sessionId);
             if (session && session.data.barcodes) {
                 currentSessionId = session.id;
-                // Array එක load කිරීම
                 scannedBarcodes = session.data.barcodes;
                 el.searchByDate.value = "";
                 Swal.fire({ title: `'${session.name}' loaded.`, icon: 'success', timer: 1500, showConfirmButton: false });
@@ -416,14 +406,12 @@
         }
 
         function clearCurrentOrder(showAlert = true) {
-            // Array එක හිස් කිරීම
             scannedBarcodes = [];
             currentSessionId = null;
             renderPermanentBarcodes();
             if (showAlert) Swal.fire({ title: "Current data cleared.", icon: "success", timer: 1500, showConfirmButton: false });
         }
         
-        // --- වෙනස්කම 5: Print සහ CSV ක්‍රියාවලි යාවත්කාලීන කිරීම ---
         function printScannedOrder() {
             if (scannedBarcodes.length === 0) {
                 return Swal.fire({ title: "No barcodes to print.", icon: "warning" });
@@ -433,7 +421,6 @@
             const printList = document.getElementById("printBarcodeList");
             printList.innerHTML = "";
             
-            // මුද්‍රණයේදී 1, 2, 3.. පිළිවෙලට පෙන්වීමට Array එක reverse කිරීම
             const chronologicalBarcodes = [...scannedBarcodes].reverse();
             const itemsPerColumn = 30;
 
@@ -454,7 +441,6 @@
         function downloadCsv() {
             if (scannedBarcodes.length === 0) return Swal.fire({ title: "No barcodes to download.", icon: "warning" });
             
-            // CSV ගොනුවේ 1, 2, 3.. පිළිවෙලට ගැනීම
             const chronologicalBarcodes = [...scannedBarcodes].reverse();
             let csvContent = "No,Barcode\n";
             chronologicalBarcodes.forEach((barcode, index) => {
@@ -468,7 +454,6 @@
             link.click();
         }
         
-        // (No changes in the functions below)
         function loadSavedSessionsDropdown(sessions) {
             const allSessions = sessions || JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
             el.savedSessionsSelect.innerHTML = `<option value="">Select a saved session</option>`;
