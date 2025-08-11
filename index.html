@@ -139,7 +139,7 @@
         function updateClock() { el.liveClock.textContent = (new Date).toLocaleString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: !0 }); }
         function getTimestamp(t) { const e = t ? new Date(parseInt(t, 10)) : new Date; return e.toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: !0 }); }
         function showStatusMessage(t, e) { el.statusMessage.textContent = t; el.statusMessage.className = "status-message rounded-lg text-center font-semibold p-2"; el.statusMessage.classList.add("success" === e ? "bg-green-status" : "bg-red-status", "show"); setTimeout(() => el.statusMessage.classList.remove("show"), 2500); }
-
+        
         // --- API COMMUNICATION ---
         async function apiCall(action, payload = {}) {
             try {
@@ -148,23 +148,68 @@
                     headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({ action, ...payload })
                 });
-                if (!response.ok) {
-                    throw new Error(`Network response was not ok: ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
                 const data = await response.json();
-                if (data.status !== 'success') {
-                    throw new Error(data.message || 'An unknown script error occurred.');
-                }
+                if (data.status !== 'success') throw new Error(data.message || 'An unknown script error occurred.');
                 return data;
             } catch (error) {
                 console.error(`API Call Failed for action "${action}":`, error);
                 throw error;
             }
         }
+        
+        // --- UI & STATE MANAGEMENT ---
+
+        /**
+         * NEW: Centralized function to update the entire UI from the current state.
+         * This function ensures the count and the list are always synchronized.
+         */
+        function updateUiFromState() {
+            // 1. Update the main count
+            el.uniqueOrderCount.textContent = scannedBarcodes.length;
+
+            // 2. Clear the old list
+            el.scannedOrderBarcodesList.innerHTML = "";
+            
+            // 3. Render the new list
+            const hasBarcodes = scannedBarcodes.length > 0;
+            el.noOrderBarcodesMessage.style.display = hasBarcodes ? 'none' : 'block';
+
+            if (hasBarcodes) {
+                scannedBarcodes.forEach((barcode, index) => {
+                    const listItem = document.createElement("li");
+                    listItem.style.animation = `slideInFromLeft 0.5s ease-out forwards`;
+                    listItem.className = "flex items-center justify-between p-2 rounded-md shadow-sm border text-lg font-medium bg-gray-700/50 border-gray-600/50 text-gray-200";
+                    
+                    const scanNumber = scannedBarcodes.length - index;
+                    const leftDiv = document.createElement('div');
+                    leftDiv.className = 'flex items-center';
+                    
+                    const numberSpan = document.createElement('span');
+                    numberSpan.className = "font-bold text-blue-300 w-10 text-left";
+                    numberSpan.textContent = `#${scanNumber}`;
+                    
+                    const barcodeSpan = document.createElement('span');
+                    barcodeSpan.textContent = barcode;
+                    
+                    leftDiv.appendChild(numberSpan);
+                    leftDiv.appendChild(barcodeSpan);
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = "Delete";
+                    deleteBtn.className = "btn-danger px-3 py-1 text-xs rounded-md font-semibold";
+                    deleteBtn.onclick = () => handleDeleteSingleBarcode(scanNumber - 1);
+                    
+                    listItem.appendChild(leftDiv);
+                    listItem.appendChild(deleteBtn);
+                    el.scannedOrderBarcodesList.appendChild(listItem);
+                });
+                el.orderListContainer.scrollTop = 0; // Scroll to top of the list
+            }
+        }
 
         // --- APPLICATION LOGIC ---
 
-        // FIXED: Login function with clear promise handling.
         function handleLogin() {
             const passcode = el.passcodeInput.value;
             if (!passcode) {
@@ -177,24 +222,19 @@
             el.loginError.textContent = '';
 
             apiCall("validateLogin", { passcode: passcode })
-                .then(response => { // Use a descriptive name
-                    // This block runs ONLY on successful validation
+                .then(() => {
                     el.loginScreen.classList.add('hidden');
                     el.appContainer.classList.remove('hidden');
                     document.title = "World Out Fashion - OMS";
                     initializeApp();
                 })
                 .catch(error => {
-                    // This block runs for network errors or if status is not 'success'
                     console.error("Login Error:", error);
-                    el.loginError.textContent = error.message.includes('Invalid Passcode') 
-                        ? 'Incorrect passcode.' 
-                        : 'Login failed. Check connection.';
+                    el.loginError.textContent = error.message.includes('Invalid Passcode') ? 'Incorrect passcode.' : 'Login failed. Check connection.';
                     el.passcodeInput.value = '';
                     el.passcodeInput.focus();
                 })
                 .finally(() => {
-                    // This always runs, to re-enable the button
                     el.loginButton.disabled = false;
                     el.loginBtnText.classList.remove('hidden');
                     el.loginBtnSpinner.classList.add('hidden');
@@ -218,7 +258,6 @@
             el.resetDateFilterBtn.addEventListener("click", () => { el.searchByDate.value = ""; filterSessionsByDate(); });
             el.saveToSheetBtn.addEventListener("click", saveDataToGoogleSheet);
             
-            // Fetch initial sessions
             try {
                 el.loadSelectedSessionBtn.disabled = true;
                 const data = await apiCall("getAllSessions");
@@ -233,7 +272,6 @@
             }
         }
 
-        // FIXED: Sound playback logic.
         function handleOrderScanAddBarcode() {
             const barcode = el.orderScanInput.value.trim();
             if (barcode === "") return;
@@ -246,25 +284,69 @@
                 
                 const successAudio = document.getElementById('successSound');
                 if (successAudio) {
-                    successAudio.pause();      // Stop any previous playback
-                    successAudio.currentTime = 0; // Rewind to the start
+                    successAudio.pause();
+                    successAudio.currentTime = 0;
                     successAudio.play().catch(error => console.error("Audio playback failed:", error));
                 }
                 
-                renderPermanentBarcodes();
+                updateUiFromState(); // UPDATED: Use the central UI function
                 autoSaveSession();
             }
             el.orderScanInput.value = "";
             el.orderScanInput.focus();
         }
-        
-        // --- The rest of the functions are mostly unchanged but included for completeness ---
 
-        function renderPermanentBarcodes(){el.scannedOrderBarcodesList.innerHTML="";const t=scannedBarcodes.length>0;if(el.noOrderBarcodesMessage.style.display=t?"none":"block",t){scannedBarcodes.forEach((t,e)=>{const a=document.createElement("li");a.style.animation="slideInFromLeft 0.5s ease-out forwards",a.className="flex items-center justify-between p-2 rounded-md shadow-sm border text-lg font-medium bg-gray-700/50 border-gray-600/50 text-gray-200";const s=scannedBarcodes.length-e,n=document.createElement("div");n.className="flex items-center";const o=document.createElement("span");o.className="font-bold text-blue-300 w-10 text-left",o.textContent=`#${s}`;const d=document.createElement("span");d.textContent=t,n.appendChild(o),n.appendChild(d);const i=document.createElement("button");i.textContent="Delete",i.className="btn-danger px-3 py-1 text-xs rounded-md font-semibold",i.onclick=()=>handleDeleteSingleBarcode(s-1),a.appendChild(n),a.appendChild(i),el.scannedOrderBarcodesList.appendChild(a)});el.orderListContainer.scrollTop=0}el.uniqueOrderCount.textContent=scannedBarcodes.length}
-        function handleDeleteSingleBarcode(t){const e=scannedBarcodes.length-1-t,a=scannedBarcodes[e];Swal.fire({title:"Are you sure?",text:`Do you want to remove barcode "${a}"?`,icon:"warning",showCancelButton:!0,confirmButtonColor:"#d33",cancelButtonColor:"#3085d6",confirmButtonText:"Yes, delete it!",cancelButtonText:"Cancel"}).then(a=>{a.isConfirmed&&(scannedBarcodes.splice(e,1),renderPermanentBarcodes(),autoSaveSession())})}
+        function handleDeleteSingleBarcode(reverseIndex) {
+            const actualIndex = scannedBarcodes.length - 1 - reverseIndex;
+            const barcodeValue = scannedBarcodes[actualIndex];
+            Swal.fire({
+                title: 'Are you sure?', text: `Do you want to remove barcode "${barcodeValue}"?`,
+                icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!', cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    scannedBarcodes.splice(actualIndex, 1);
+                    updateUiFromState(); // UPDATED: Use the central UI function
+                    autoSaveSession();
+                }
+            });
+        }
+
+        async function loadSelectedSession() {
+            const sessionId = el.savedSessionsSelect.value;
+            if (!sessionId) return Swal.fire({ title: "Please select a session.", icon: 'warning' });
+            
+            el.loadSelectedSessionBtn.disabled = true;
+            el.loadSelectedSessionBtn.textContent = "Loading...";
+
+            try {
+                const data = await apiCall("getSessionData", { sessionId: sessionId });
+                currentSessionId = data.session.id;
+                scannedBarcodes = data.session.data.barcodes || [];
+                
+                updateUiFromState(); // UPDATED: Use the central UI function
+                
+                el.savedSessionsSelect.value = currentSessionId;
+                Swal.fire({ title: `'${data.session.name}' loaded.`, icon: 'success', timer: 1500, showConfirmButton: false });
+            } catch (error) {
+                Swal.fire("Error", "Could not load the selected session.", "error");
+            } finally {
+                el.loadSelectedSessionBtn.disabled = false;
+                el.loadSelectedSessionBtn.textContent = "Load";
+            }
+        }
+        
+        function clearCurrentOrder(showAlert = true) {
+            scannedBarcodes = [];
+            currentSessionId = null;
+            updateUiFromState(); // UPDATED: Use the central UI function
+            filterSessionsByDate();
+            if (showAlert) Swal.fire({ title: "Session cleared.", icon: "success", timer: 1500, showConfirmButton: false });
+        }
+        
+        // --- The rest of the functions are unchanged ---
+        
         async function autoSaveSession(){if(0===scannedBarcodes.length&&!currentSessionId)return;try{const t={sessionId:currentSessionId,name:currentSessionId?null:`Session - ${getTimestamp()}`,barcodes:scannedBarcodes},e=await apiCall("saveSession",t),a=!currentSessionId;currentSessionId=e.sessionId,a&&(allSessions.push({id:currentSessionId,name:t.name,createdAt:Date.now()}),filterSessionsByDate()),el.autoSaveStatus.classList.add("show"),setTimeout(()=>{el.autoSaveStatus.classList.remove("show")},2e3)}catch(t){el.autoSaveStatus.textContent="✗ Save Failed",el.autoSaveStatus.style.color="#e53e3e",el.autoSaveStatus.classList.add("show"),setTimeout(()=>{el.autoSaveStatus.classList.remove("show"),el.autoSaveStatus.textContent="✓ Saved",el.autoSaveStatus.style.color="#48bb78"},3e3)}}
-        async function loadSelectedSession(){const t=el.savedSessionsSelect.value;if(!t)return void Swal.fire({title:"Please select a session.",icon:"warning"});el.loadSelectedSessionBtn.disabled=!0,el.loadSelectedSessionBtn.textContent="Loading...";try{const e=await apiCall("getSessionData",{sessionId:t});currentSessionId=e.session.id,scannedBarcodes=e.session.data.barcodes||[],renderPermanentBarcodes(),el.savedSessionsSelect.value=currentSessionId,Swal.fire({title:`'${e.session.name}' loaded.`,icon:"success",timer:1500,showConfirmButton:!1})}catch(t){Swal.fire("Error","Could not load the selected session.","error")}finally{el.loadSelectedSessionBtn.disabled=!1,el.loadSelectedSessionBtn.textContent="Load"}}
-        function clearCurrentOrder(t=!0){scannedBarcodes=[],currentSessionId=null,renderPermanentBarcodes(),filterSessionsByDate(),t&&Swal.fire({title:"Session cleared.",icon:"success",timer:1500,showConfirmButton:!1})}
         function printScannedOrder(){if(0===scannedBarcodes.length)return void Swal.fire({title:"No barcodes to print.",icon:"warning"});document.getElementById("printDate").textContent=getTimestamp();const t=document.getElementById("printBarcodeList");t.innerHTML="";const e=[...scannedBarcodes].reverse();for(let a=0;a<e.length;a+=30){const s=e.slice(a,a+30),n=document.createElement("div");n.className="print-column",s.forEach((t,e)=>{const s=document.createElement("div");s.textContent=`${a+e+1}. ${t}`,n.appendChild(s)}),t.appendChild(n)}window.print()}
         function downloadCsv(){if(0===scannedBarcodes.length)return void Swal.fire({title:"No barcodes to download.",icon:"warning"});const t=[...scannedBarcodes].reverse();let e="No,Barcode\n";t.forEach((t,a)=>{e+=`${a+1},${t}\n`});const a=new Blob([e],{type:"text/csv;charset=utf-8;"}),s=document.createElement("a");s.href=URL.createObjectURL(a),s.download=`scanned_order_${Date.now()}.csv`,s.click()}
         function filterSessionsByDate(){const t=el.searchByDate.value;let e=allSessions;t&&(e=allSessions.filter(e=>{const a=e.createdAt||parseInt(e.id.split("-")[1],10),s=new Date(a).toLocaleDateString("en-CA");return s===t})),el.savedSessionsSelect.innerHTML=`<option value="">Select a saved session</option>`,e.sort((t,e)=>(e.createdAt||0)-(t.createdAt||0)).forEach(t=>{const e=document.createElement("option");e.value=t.id,e.textContent=t.name,el.savedSessionsSelect.appendChild(e)}),el.savedSessionsSelect.value=currentSessionId||""}
