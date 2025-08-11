@@ -7,18 +7,33 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes animateGradient {
+        @keyframes moveLights {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        body { 
+
+        body {
+            background-color: #020412;
+            color: #e2e8f0;
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #0f0c29);
-            background-size: 600% 600%;
-            animation: animateGradient 25s ease infinite;
-            color: #e2e8f0; 
+            position: relative;
+            overflow: hidden;
         }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 15% 25%, hsla(210, 70%, 80%, 0.25), transparent 35%),
+                radial-gradient(circle at 85% 35%, hsla(280, 60%, 80%, 0.25), transparent 40%),
+                radial-gradient(circle at 50% 85%, hsla(190, 60%, 70%, 0.2), transparent 45%);
+            background-size: 250% 250%;
+            animation: moveLights 40s ease-in-out infinite;
+        }
+        
         .overflow-y-auto::-webkit-scrollbar { width: 8px; }
         .overflow-y-auto::-webkit-scrollbar-track { background: #2d3748; }
         .overflow-y-auto::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 10px; }
@@ -30,10 +45,16 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); }
-        .status-message { transition: all 0.5s ease-in-out; overflow: hidden; max-height: 0; padding: 0; margin-top: 0; opacity: 0; }
-        .status-message.show { max-height: 100px; padding: 0.5rem; margin-top: 0.75rem; opacity: 1; }
+        .status-message { transition: all 0.4s ease-in-out; opacity: 0; transform: translateY(-15px); max-height: 0; margin-top: 0; }
+        .status-message.show { opacity: 1; transform: translateY(0); max-height: 100px; padding: 0.5rem; margin-top: 0.75rem; }
         .auto-save-status { opacity: 0; transition: opacity 0.5s ease; color: #48bb78; }
         .auto-save-status.show { opacity: 1; }
+        .btn-primary, .btn-secondary, .btn-danger, .btn-info, .btn-success, .btn-warning {
+            transition: background-color 0.2s, transform 0.1s ease-out;
+        }
+        .btn-primary:active, .btn-secondary:active, .btn-danger:active, .btn-info:active, .btn-success:active, .btn-warning:active {
+            transform: scale(0.97);
+        }
 
         .text-primary { color: #e2e8f0; }
         .text-secondary { color: #a0aec0; }
@@ -44,6 +65,7 @@
         .btn-danger{background-color:#e53e3e;color:#fff}.btn-danger:hover{background-color:#c53030}
         .btn-info{background-color:#5a67d8;color:#fff}.btn-info:hover{background-color:#4c51bf}
         .btn-success{background-color:#38a169;color:#fff}.btn-success:hover{background-color:#2f855a}
+        .btn-warning{background-color: #f6ad55; color: #fff;}.btn-warning:hover{background-color: #dd6b20;}
         .bg-green-status{background-color:#2f855a;border:1px solid #38a169;color:#c6f6d5}
         .bg-red-status{background-color:#c53030;border:1px solid #e53e3e;color:#fed7d7}
         input, select, textarea { background-color: #1a202c; border-color: #4a5568; color: #e2e8f0; }
@@ -51,8 +73,9 @@
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); cursor: pointer; }
         
         @media print {
+            body, body::before { background: #fff !important; }
             body>*:not(#print-area){display:none!important}
-            #print-area{display:block!important;position:absolute;left:0;top:0;width:100%;padding:5mm;box-sizing:border-box;font-family:'Arial', sans-serif;color:#000;background-color:#fff}
+            #print-area{display:block!important;position:absolute;left:0;top:0;width:100%;padding:5mm;box-sizing:border-box;font-family:'Arial', sans-serif;color:#000;}
             .no-print{display:none!important}
             .print-header{display: flex;justify-content: space-between;align-items: center;border-bottom: 2px solid #333;padding-bottom: 5px;margin-bottom: 10px;}
             .print-title-group { display: flex; align-items: center; gap: 15px; }
@@ -64,6 +87,7 @@
             .print-column div {margin-bottom: 4px;white-space: nowrap;}
             .print-footer{display:none!important}
         }
+        @keyframes slideInFromLeft{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
     </style>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -79,11 +103,11 @@
             <div class="space-y-4">
                 <div>
                     <label for="passcodeInput" class="block mb-2 text-sm font-medium text-secondary">Passcode</label>
-                    <!-- වෙනස්කම: inputmode="numeric" එකතු කරන ලදී -->
                     <input type="password" id="passcodeInput" class="w-full p-3 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200 shadow-sm" placeholder="••••••••" inputmode="numeric">
                 </div>
-                <button id="loginButton" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary">
-                    Login
+                <button id="loginButton" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md btn-primary">
+                    <span id="loginBtnText">Login</span>
+                    <div id="loginBtnSpinner" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
                 </button>
                 <p id="loginError" class="text-red-400 text-center text-sm h-4"></p>
             </div>
@@ -115,7 +139,7 @@
                 <div>
                      <div class="flex flex-col sm:flex-row gap-4">
                         <input type="text" id="orderScanInput" class="flex-grow p-3 border-2 border-blue-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200 shadow-sm" />
-                        <button id="addOrderBarcodeBtn" class="px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary"></button>
+                        <button id="addOrderBarcodeBtn" class="px-6 py-3 rounded-lg font-semibold shadow-md btn-primary"></button>
                     </div>
                     <div id="statusMessage" class="status-message rounded-lg text-center font-semibold p-2"></div>
                 </div>
@@ -127,23 +151,21 @@
                         </ul>
                     </div>
                 </div>
-                 <button id="clearCurrentOrderBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-secondary"></button>
+                 <button id="clearCurrentOrderBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md btn-secondary"></button>
             </div>
 
             <!-- Right Column -->
             <div class="w-full lg:w-2/5 flex flex-col gap-y-8">
                 <div class="p-6 bg-card-section rounded-xl border border-theme shadow-inner h-fit">
                      <h2 id="exportTitle" class="text-2xl font-bold text-primary mb-4 border-b border-theme pb-2"></h2>
-                     <div class="mb-4">
-                        <label id="customPrintTitleLabel" for="customPrintTitle" class="block mb-2 text-sm font-medium text-secondary"></label>
-                        <input type="text" id="customPrintTitle" class="w-full p-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500">
-                     </div>
-                     <div class="mb-4">
-                        <label id="customPrintNoteLabel" for="customPrintNote" class="block mb-2 text-sm font-medium text-secondary"></label>
-                        <textarea id="customPrintNote" rows="2" class="w-full p-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"></textarea>
-                     </div>
-                     <button id="printScannedOrderBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-info"></button>
-                     <button id="downloadCsvBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-success"></button>
+                     <button id="saveToSheetBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md btn-warning">
+                        <span id="saveBtnText">Save to Google Sheet</span>
+                        <div id="saveBtnSpinner" class="hidden animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>
+                     </button>
+                     <p id="sheetStatus" class="text-center text-sm h-4 mt-2"></p>
+                     <hr class="my-4 border-gray-600">
+                     <button id="printScannedOrderBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md btn-info"></button>
+                     <button id="downloadCsvBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md btn-success"></button>
                 </div>
                 <div class="p-6 bg-card-section rounded-xl border border-theme shadow-inner h-fit">
                     <div class="flex justify-between items-center mb-4">
@@ -154,14 +176,14 @@
                          <label id="searchByDateLabel" for="searchByDate" class="block mb-2 text-sm font-medium text-secondary"></label>
                          <div class="flex gap-2">
                             <input type="date" id="searchByDate" class="w-full p-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500">
-                            <button id="resetDateFilterBtn" class="px-4 py-2 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-secondary text-xs"></button>
+                            <button id="resetDateFilterBtn" class="px-4 py-2 rounded-lg font-semibold shadow-md btn-secondary text-xs"></button>
                          </div>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-4">
                         <select id="savedSessionsSelect" class="flex-grow p-3 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500"><option value=""></option></select>
-                        <button id="loadSelectedSessionBtn" class="px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-primary"></button>
+                        <button id="loadSelectedSessionBtn" class="px-6 py-3 rounded-lg font-semibold shadow-md btn-primary"></button>
                     </div>
-                    <button id="deleteSelectedSessionBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md transition transform hover:scale-105 btn-danger"></button>
+                    <button id="deleteSelectedSessionBtn" class="mt-4 w-full px-6 py-3 rounded-lg font-semibold shadow-md btn-danger"></button>
                 </div>
             </div>
         </div>
@@ -180,16 +202,19 @@
     </div>
 
     <script>
-        const CORRECT_PASSCODE = '9131'; 
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyuYsSzGAmbFUClFQEWYbPSYyDKeh3CJn8dn5yPZ4AhFxZtBseTCYurxirFRAzJ25KO/exec"; 
+
         let scannedBarcodes = [];
         let currentSessionId = null;
 
         const el = {
             loginScreen: document.getElementById('login-screen'),
-            appContainer: document.getElementById('app-container'),
-            passcodeInput: document.getElementById('passcodeInput'),
             loginButton: document.getElementById('loginButton'),
+            loginBtnText: document.getElementById('loginBtnText'),
+            loginBtnSpinner: document.getElementById('loginBtnSpinner'),
+            passcodeInput: document.getElementById('passcodeInput'),
             loginError: document.getElementById('loginError'),
+            appContainer: document.getElementById('app-container'),
             appTitle: document.getElementById("appTitle"),
             scanOrderDescription: document.getElementById("scanOrderDescription"),
             uniqueOrderCountLabel: document.getElementById("uniqueOrderCountLabel"),
@@ -203,10 +228,6 @@
             orderListContainer: document.getElementById("orderListContainer"),
             clearCurrentOrderBtn: document.getElementById("clearCurrentOrderBtn"),
             exportTitle: document.getElementById("exportTitle"),
-            customPrintTitleLabel: document.getElementById("customPrintTitleLabel"),
-            customPrintTitle: document.getElementById("customPrintTitle"),
-            customPrintNoteLabel: document.getElementById("customPrintNoteLabel"),
-            customPrintNote: document.getElementById("customPrintNote"),
             printScannedOrderBtn: document.getElementById("printScannedOrderBtn"),
             downloadCsvBtn: document.getElementById("downloadCsvBtn"),
             loadPreviousOrdersTitle: document.getElementById("loadPreviousOrdersTitle"),
@@ -218,9 +239,13 @@
             loadSelectedSessionBtn: document.getElementById("loadSelectedSessionBtn"),
             deleteSelectedSessionBtn: document.getElementById("deleteSelectedSessionBtn"),
             liveClock: document.getElementById("live-clock"),
+            saveToSheetBtn: document.getElementById('saveToSheetBtn'),
+            saveBtnText: document.getElementById('saveBtnText'),
+            saveBtnSpinner: document.getElementById('saveBtnSpinner'),
+            sheetStatus: document.getElementById('sheetStatus'),
         };
 
-        const LOCAL_STORAGE_KEY = 'barcodeApp_savedSessions_v7'; 
+        const LOCAL_STORAGE_KEY = 'barcodeApp_savedSessions_v8';
 
         function setInitialTexts() {
             el.appTitle.textContent = "Order Management System";
@@ -230,33 +255,59 @@
             el.scannedOrderTitle.textContent = "Scanned Barcodes";
             el.noOrderBarcodesMessage.textContent = "No barcodes scanned.";
             el.clearCurrentOrderBtn.textContent = "Clear Current Order";
-            el.exportTitle.textContent = "Export & Customize";
-            el.customPrintTitleLabel.textContent = "Custom Title for Print";
-            el.customPrintNoteLabel.textContent = "Custom Note for Print";
+            el.exportTitle.textContent = "Export & Save";
             el.printScannedOrderBtn.textContent = "Print Order (A4)";
             el.downloadCsvBtn.textContent = "Download CSV";
-            el.loadPreviousOrdersTitle.textContent = "Load Previous Orders";
+            el.loadPreviousOrdersTitle.textContent = "Load Previous Sessions";
             el.searchByDateLabel.textContent = "Search by Date";
             el.resetDateFilterBtn.textContent = "Reset";
             el.loadSelectedSessionBtn.textContent = "Load";
             el.deleteSelectedSessionBtn.textContent = "Delete";
             el.orderScanInput.placeholder = "Barcode number...";
-            el.customPrintTitle.placeholder = "e.g., Customer Order #123";
-            el.customPrintNote.placeholder = "Add a note...";
             el.savedSessionsSelect.innerHTML = `<option value="">Select a saved session</option>`;
         }
 
         function handleLogin() {
-            if (el.passcodeInput.value === CORRECT_PASSCODE) {
-                el.loginScreen.classList.add('hidden');
-                el.appContainer.classList.remove('hidden');
-                document.title = "World Out Fashion - OMS";
-                initializeApp();
-            } else {
-                el.loginError.textContent = 'Incorrect passcode. Please try again.';
-                el.passcodeInput.value = '';
-                el.passcodeInput.focus();
+            const passcode = el.passcodeInput.value;
+            if (!passcode) {
+                el.loginError.textContent = 'Please enter a passcode.';
+                return;
             }
+
+            el.loginButton.disabled = true;
+            el.loginBtnText.classList.add('hidden');
+            el.loginBtnSpinner.classList.remove('hidden');
+            el.loginError.textContent = '';
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'cors',
+                cache: 'no-cache',
+                headers: { 'Content-Type': 'text/plain', },
+                body: JSON.stringify({ action: 'validateLogin', passcode: passcode })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    el.loginScreen.classList.add('hidden');
+                    el.appContainer.classList.remove('hidden');
+                    document.title = "World Out Fashion - OMS";
+                    initializeApp();
+                } else {
+                    el.loginError.textContent = 'Incorrect passcode. Please try again.';
+                    el.passcodeInput.value = '';
+                    el.passcodeInput.focus();
+                }
+            })
+            .catch(error => {
+                console.error('Login Error:', error);
+                el.loginError.textContent = 'Login failed. Check console for details.';
+            })
+            .finally(() => {
+                el.loginButton.disabled = false;
+                el.loginBtnText.classList.remove('hidden');
+                el.loginBtnSpinner.classList.add('hidden');
+            });
         }
         
         function initializeApp() {
@@ -273,19 +324,68 @@
             el.deleteSelectedSessionBtn.addEventListener("click", deleteSelectedSession);
             el.searchByDate.addEventListener("input", filterSessionsByDate);
             el.resetDateFilterBtn.addEventListener("click", () => { el.searchByDate.value = "", filterSessionsByDate() });
+            el.saveToSheetBtn.addEventListener('click', saveDataToGoogleSheet);
             
             filterSessionsByDate();
         }
 
+        function saveDataToGoogleSheet() {
+            if (scannedBarcodes.length === 0) {
+                Swal.fire('No Data', 'There are no barcodes to save.', 'warning');
+                return;
+            }
+
+            el.saveToSheetBtn.disabled = true;
+            el.saveBtnText.classList.add('hidden');
+            el.saveBtnSpinner.classList.remove('hidden');
+            el.sheetStatus.textContent = 'Saving...';
+            el.sheetStatus.style.color = '#63b3ed';
+
+            const payload = {
+                action: 'saveData',
+                sessionId: currentSessionId || `SESSION-${Date.now()}`,
+                barcodes: [...scannedBarcodes].reverse()
+            };
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'cors',
+                cache: 'no-cache',
+                headers: { 'Content-Type': 'text/plain', },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                     el.sheetStatus.textContent = 'Data saved successfully!';
+                    el.sheetStatus.style.color = '#48bb78';
+                    Swal.fire('Success!', 'Your data has been saved to the Google Sheet.', 'success');
+                    clearCurrentOrder(false); 
+                } else {
+                    throw new Error(data.message || 'Unknown error from script.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                el.sheetStatus.textContent = 'Save failed. Check console.';
+                el.sheetStatus.style.color = '#e53e3e';
+                Swal.fire('Error', 'Failed to save data. Please check the console for details.', 'error');
+            })
+            .finally(() => {
+                el.saveToSheetBtn.disabled = false;
+                el.saveBtnText.classList.remove('hidden');
+                el.saveBtnSpinner.classList.add('hidden');
+                setTimeout(() => { el.sheetStatus.textContent = '' }, 5000);
+            });
+        }
+        
         function getTimestamp(t) {
             const date = t ? new Date(parseInt(t, 10)) : new Date();
             return date.toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
         }
-
         function updateClock() {
             el.liveClock.textContent = (new Date).toLocaleString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
         }
-
         function showStatusMessage(message, type) {
             el.statusMessage.textContent = message;
             el.statusMessage.className = "status-message rounded-lg text-center font-semibold p-2";
@@ -297,32 +397,25 @@
             el.scannedOrderBarcodesList.innerHTML = "";
             const hasBarcodes = scannedBarcodes.length > 0;
             el.noOrderBarcodesMessage.style.display = hasBarcodes ? 'none' : 'block';
-            
             if (hasBarcodes) {
                 scannedBarcodes.forEach((barcode, index) => {
                     const listItem = document.createElement("li");
+                    listItem.style.animation = `slideInFromLeft 0.5s ease-out forwards`;
                     listItem.className = "flex items-center justify-between p-2 rounded-md shadow-sm border text-lg font-medium bg-gray-700/50 border-gray-600/50 text-gray-200";
-                    
                     const scanNumber = scannedBarcodes.length - index;
-
                     const leftDiv = document.createElement('div');
                     leftDiv.className = 'flex items-center';
-                    
                     const numberSpan = document.createElement('span');
                     numberSpan.className = "font-bold text-blue-300 w-10 text-left";
                     numberSpan.textContent = `#${scanNumber}`;
-                    
                     const barcodeSpan = document.createElement('span');
                     barcodeSpan.textContent = barcode;
-
                     leftDiv.appendChild(numberSpan);
                     leftDiv.appendChild(barcodeSpan);
-
                     const deleteBtn = document.createElement('button');
                     deleteBtn.textContent = "Delete";
-                    deleteBtn.className = "btn-danger px-3 py-1 text-xs rounded-md font-semibold transition transform hover:scale-105";
-                    deleteBtn.onclick = () => handleDeleteSingleBarcode(scanNumber - 1); // Pass the correct index
-
+                    deleteBtn.className = "btn-danger px-3 py-1 text-xs rounded-md font-semibold";
+                    deleteBtn.onclick = () => handleDeleteSingleBarcode(scanNumber - 1); 
                     listItem.appendChild(leftDiv);
                     listItem.appendChild(deleteBtn);
                     el.scannedOrderBarcodesList.appendChild(listItem);
@@ -332,42 +425,53 @@
             el.uniqueOrderCount.textContent = scannedBarcodes.length;
         }
 
+        // --- වෙනස්කම: handleDeleteSingleBarcode ශ්‍රිතයට pop-up එක එකතු කිරීම ---
         function handleDeleteSingleBarcode(reverseIndex) {
-            // The actual index in the array is calculated from the reverse order
             const actualIndex = scannedBarcodes.length - 1 - reverseIndex;
-            scannedBarcodes.splice(actualIndex, 1);
-            renderPermanentBarcodes();
-            autoSaveSession();
+            const barcodeValue = scannedBarcodes[actualIndex]; 
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: `Do you want to remove barcode "${barcodeValue}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // තහවුරු කළහොත් පමණක් මකා දැමීම
+                    scannedBarcodes.splice(actualIndex, 1);
+                    renderPermanentBarcodes();
+                    autoSaveSession();
+                }
+            });
         }
 
         function handleOrderScanAddBarcode() {
             const barcode = el.orderScanInput.value.trim();
             if (barcode === "") return;
-            
             if (scannedBarcodes.includes(barcode)) {
                 showStatusMessage(`Already Scanned: ${barcode}`, "error");
             } else {
                 scannedBarcodes.unshift(barcode);
                 showStatusMessage(`Success: ${barcode}`, "success");
-                
                 const successAudio = document.getElementById('successSound');
                 if (successAudio) {
                     successAudio.pause();
                     successAudio.currentTime = 0;
                     successAudio.play().catch(error => console.error("Audio playback failed:", error));
                 }
-
                 renderPermanentBarcodes();
                 autoSaveSession();
             }
             el.orderScanInput.value = "";
             el.orderScanInput.focus();
         }
-        
         async function autoSaveSession() {
             try {
                 let sessions = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
-                
                 if (currentSessionId && sessions.some(s => s.id === currentSessionId)) {
                     sessions = sessions.map(s => s.id === currentSessionId ? { ...s, data: { barcodes: scannedBarcodes } } : s);
                 } else {
@@ -389,11 +493,9 @@
                 console.error("Auto-save error:", err);
             }
         }
-        
         function loadSelectedSession() {
             const sessionId = el.savedSessionsSelect.value;
             if (!sessionId) return Swal.fire({ title: "Please select a session.", icon: 'warning' });
-            
             const session = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]").find(s => s.id === sessionId);
             if (session && session.data.barcodes) {
                 currentSessionId = session.id;
@@ -404,26 +506,21 @@
                 filterSessionsByDate();
             }
         }
-
         function clearCurrentOrder(showAlert = true) {
             scannedBarcodes = [];
             currentSessionId = null;
             renderPermanentBarcodes();
             if (showAlert) Swal.fire({ title: "Current data cleared.", icon: "success", timer: 1500, showConfirmButton: false });
         }
-        
         function printScannedOrder() {
             if (scannedBarcodes.length === 0) {
                 return Swal.fire({ title: "No barcodes to print.", icon: "warning" });
             }
-
             document.getElementById("printDate").textContent = getTimestamp();
             const printList = document.getElementById("printBarcodeList");
             printList.innerHTML = "";
-            
             const chronologicalBarcodes = [...scannedBarcodes].reverse();
             const itemsPerColumn = 30;
-
             for (let i = 0; i < chronologicalBarcodes.length; i += itemsPerColumn) {
                 const chunk = chronologicalBarcodes.slice(i, i + itemsPerColumn);
                 const columnDiv = document.createElement('div');
@@ -437,23 +534,19 @@
             }
             window.print();
         }
-
         function downloadCsv() {
             if (scannedBarcodes.length === 0) return Swal.fire({ title: "No barcodes to download.", icon: "warning" });
-            
             const chronologicalBarcodes = [...scannedBarcodes].reverse();
             let csvContent = "No,Barcode\n";
             chronologicalBarcodes.forEach((barcode, index) => {
                 csvContent += `${index + 1},${barcode}\n`;
             });
-
             const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
             link.download = `scanned_order_${Date.now()}.csv`;
             link.click();
         }
-        
         function loadSavedSessionsDropdown(sessions) {
             const allSessions = sessions || JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
             el.savedSessionsSelect.innerHTML = `<option value="">Select a saved session</option>`;
@@ -499,6 +592,7 @@
                 }
             });
         }
+        
         document.addEventListener("DOMContentLoaded", () => {
             el.loginButton.addEventListener('click', handleLogin);
             el.passcodeInput.addEventListener('keypress', (e) => {
