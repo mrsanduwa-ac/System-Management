@@ -62,14 +62,15 @@
                     <div id="statusMessage" class="status-message rounded-lg text-center font-semibold p-2"></div>
                 </div>
                 <div>
-                    <h2 id="scannedOrderTitle" class="text-2xl font-bold text-primary mb-4 border-b border-theme pb-2"></h2>
+                    <!-- UPDATED: Dynamic header for the scanned list -->
+                    <h2 id="scannedListHeader" class="text-2xl font-bold text-primary mb-4 border-b border-theme pb-2"></h2>
                     <div id="orderListContainer" class="bg-card-section p-4 rounded-lg border border-theme max-h-60 lg:max-h-96 overflow-y-auto shadow-inner">
                         <ul id="scannedOrderBarcodesList" class="space-y-2">
                             <p id="noOrderBarcodesMessage" class="text-secondary text-center py-4"></p>
                         </ul>
                     </div>
                 </div>
-                 <button id="clearCurrentOrderBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md btn-secondary"></button>
+                 <button id="returnToTodayBtn" class="w-full px-6 py-3 rounded-lg font-semibold shadow-md btn-secondary"></button>
             </div>
 
             <!-- Right Column -->
@@ -90,6 +91,17 @@
                         <h2 id="loadPreviousOrdersTitle" class="text-2xl font-bold text-primary border-b border-theme pb-2"></h2>
                         <span id="autoSaveStatus" class="auto-save-status font-semibold">✓ Saved</span>
                     </div>
+
+                    <div id="liveSessionDisplay" class="mb-2 p-3 bg-blue-900/40 rounded-lg text-center border border-blue-700/60 hidden">
+                        <p class="text-sm text-blue-300">Live Session:</p>
+                        <p id="liveSessionName" class="font-bold text-lg text-white"></p>
+                    </div>
+                    
+                    <button id="manualSaveBtn" class="w-full mb-4 px-6 py-2 rounded-lg font-semibold shadow-md btn-success text-sm">
+                        <span id="manualSaveBtnText">Save Current Session</span>
+                        <div id="manualSaveBtnSpinner" class="hidden animate-spin rounded-full h-4 w-4 border-b-2 border-white mx-auto"></div>
+                    </button>
+                    
                     <div class="mb-4">
                          <label id="searchByDateLabel" for="searchByDate" class="block mb-2 text-sm font-medium text-secondary"></label>
                          <div class="flex gap-2">
@@ -126,101 +138,84 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyuYsSzGAmbFUClFQEWYbPSYyDKeh3CJn8dn5yPZ4AhFxZtBseTCYurxirFRAzJ25KO/exec"; 
         // =========================================================================
 
+        // State for live data (today)
         let scannedBarcodes = [];
         let currentSessionId = null;
+
+        // State for what is currently being displayed on screen
+        let currentlyViewingBarcodes = [];
+        let currentlyViewingSessionId = null;
+
         let allSessions = [];
 
         const el = {
-            loginScreen: document.getElementById('login-screen'), loginButton: document.getElementById('loginButton'), loginBtnText: document.getElementById('loginBtnText'), loginBtnSpinner: document.getElementById('loginBtnSpinner'), passcodeInput: document.getElementById('passcodeInput'), loginError: document.getElementById('loginError'), appContainer: document.getElementById('app-container'), appTitle: document.getElementById("appTitle"), scanOrderDescription: document.getElementById("scanOrderDescription"), uniqueOrderCountLabel: document.getElementById("uniqueOrderCountLabel"), uniqueOrderCount: document.getElementById("uniqueOrderCount"), orderScanInput: document.getElementById("orderScanInput"), addOrderBarcodeBtn: document.getElementById("addOrderBarcodeBtn"), statusMessage: document.getElementById("statusMessage"), scannedOrderTitle: document.getElementById("scannedOrderTitle"), scannedOrderBarcodesList: document.getElementById("scannedOrderBarcodesList"), noOrderBarcodesMessage: document.getElementById("noOrderBarcodesMessage"), orderListContainer: document.getElementById("orderListContainer"), clearCurrentOrderBtn: document.getElementById("clearCurrentOrderBtn"), exportTitle: document.getElementById("exportTitle"), printScannedOrderBtn: document.getElementById("printScannedOrderBtn"), downloadCsvBtn: document.getElementById("downloadCsvBtn"), loadPreviousOrdersTitle: document.getElementById("loadPreviousOrdersTitle"), autoSaveStatus: document.getElementById("autoSaveStatus"), searchByDateLabel: document.getElementById("searchByDateLabel"), searchByDate: document.getElementById("searchByDate"), resetDateFilterBtn: document.getElementById("resetDateFilterBtn"), savedSessionsSelect: document.getElementById("savedSessionsSelect"), loadSelectedSessionBtn: document.getElementById("loadSelectedSessionBtn"), deleteSelectedSessionBtn: document.getElementById("deleteSelectedSessionBtn"), liveClock: document.getElementById("live-clock"), saveToSheetBtn: document.getElementById('saveToSheetBtn'), saveBtnText: document.getElementById('saveBtnText'), saveBtnSpinner: document.getElementById('saveBtnSpinner'), sheetStatus: document.getElementById('sheetStatus'),
+            loginScreen: document.getElementById('login-screen'), loginButton: document.getElementById('loginButton'), loginBtnText: document.getElementById('loginBtnText'), loginBtnSpinner: document.getElementById('loginBtnSpinner'), passcodeInput: document.getElementById('passcodeInput'), loginError: document.getElementById('loginError'), appContainer: document.getElementById('app-container'), appTitle: document.getElementById("appTitle"), scanOrderDescription: document.getElementById("scanOrderDescription"), uniqueOrderCountLabel: document.getElementById("uniqueOrderCountLabel"), uniqueOrderCount: document.getElementById("uniqueOrderCount"), orderScanInput: document.getElementById("orderScanInput"), addOrderBarcodeBtn: document.getElementById("addOrderBarcodeBtn"), statusMessage: document.getElementById("statusMessage"), scannedListHeader: document.getElementById("scannedListHeader"), scannedOrderBarcodesList: document.getElementById("scannedOrderBarcodesList"), noOrderBarcodesMessage: document.getElementById("noOrderBarcodesMessage"), orderListContainer: document.getElementById("orderListContainer"), returnToTodayBtn: document.getElementById("returnToTodayBtn"), exportTitle: document.getElementById("exportTitle"), printScannedOrderBtn: document.getElementById("printScannedOrderBtn"), downloadCsvBtn: document.getElementById("downloadCsvBtn"), loadPreviousOrdersTitle: document.getElementById("loadPreviousOrdersTitle"), autoSaveStatus: document.getElementById("autoSaveStatus"), searchByDateLabel: document.getElementById("searchByDateLabel"), searchByDate: document.getElementById("searchByDate"), resetDateFilterBtn: document.getElementById("resetDateFilterBtn"), savedSessionsSelect: document.getElementById("savedSessionsSelect"), loadSelectedSessionBtn: document.getElementById("loadSelectedSessionBtn"), deleteSelectedSessionBtn: document.getElementById("deleteSelectedSessionBtn"), liveClock: document.getElementById("live-clock"), saveToSheetBtn: document.getElementById('saveToSheetBtn'), saveBtnText: document.getElementById('saveBtnText'), saveBtnSpinner: document.getElementById('saveBtnSpinner'), sheetStatus: document.getElementById('sheetStatus'), liveSessionDisplay: document.getElementById('liveSessionDisplay'), liveSessionName: document.getElementById('liveSessionName'), manualSaveBtn: document.getElementById('manualSaveBtn'), manualSaveBtnText: document.getElementById('manualSaveBtnText'), manualSaveBtnSpinner: document.getElementById('manualSaveBtnSpinner'),
         };
 
         // --- CORE & HELPER FUNCTIONS ---
-        function setInitialTexts() { el.appTitle.textContent = "Order Management System"; el.scanOrderDescription.textContent = "Scan order items."; el.uniqueOrderCountLabel.textContent = "Total Scanned"; el.addOrderBarcodeBtn.textContent = "Scan"; el.scannedOrderTitle.textContent = "Scanned Barcodes"; el.noOrderBarcodesMessage.textContent = "No barcodes scanned."; el.clearCurrentOrderBtn.textContent = "Clear Current Session"; el.exportTitle.textContent = "Export & Save"; el.printScannedOrderBtn.textContent = "Print Order (A4)"; el.downloadCsvBtn.textContent = "Download CSV"; el.loadPreviousOrdersTitle.textContent = "Load Previous Sessions"; el.searchByDateLabel.textContent = "Filter by Date"; el.resetDateFilterBtn.textContent = "Reset"; el.loadSelectedSessionBtn.textContent = "Load"; el.deleteSelectedSessionBtn.textContent = "Delete"; el.orderScanInput.placeholder = "Barcode number..."; el.savedSessionsSelect.innerHTML = `<option value="">Loading...</option>`; }
+        function setInitialTexts() { el.appTitle.textContent = "Order Management System"; el.scanOrderDescription.textContent = "Scan order items for today's session."; el.uniqueOrderCountLabel.textContent = "Total Scanned"; el.returnToTodayBtn.textContent = "Return to Today's Session"; el.exportTitle.textContent = "Export & Save"; el.printScannedOrderBtn.textContent = "Print Viewed List (A4)"; el.downloadCsvBtn.textContent = "Download Viewed List (CSV)"; el.loadPreviousOrdersTitle.textContent = "View Previous Day's Sessions"; el.searchByDateLabel.textContent = "Filter by Date"; el.resetDateFilterBtn.textContent = "Reset"; el.loadSelectedSessionBtn.textContent = "View"; el.deleteSelectedSessionBtn.textContent = "Delete"; el.orderScanInput.placeholder = "Barcode number..."; el.savedSessionsSelect.innerHTML = `<option value="">Loading...</option>`; }
         function updateClock() { el.liveClock.textContent = (new Date).toLocaleString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: !0 }); }
         function getTimestamp(t) { const e = t ? new Date(parseInt(t, 10)) : new Date; return e.toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: !0 }); }
         function showStatusMessage(t, e) { el.statusMessage.textContent = t; el.statusMessage.className = "status-message rounded-lg text-center font-semibold p-2"; el.statusMessage.classList.add("success" === e ? "bg-green-status" : "bg-red-status", "show"); setTimeout(() => el.statusMessage.classList.remove("show"), 2500); }
+        function getTodaySessionId() { const today = new Date(); const yyyy = today.getFullYear(); const mm = String(today.getMonth() + 1).padStart(2, '0'); const dd = String(today.getDate()).padStart(2, '0'); return `SESSION-${yyyy}-${mm}-${dd}`; }
         
         // --- API COMMUNICATION ---
-        async function apiCall(action, payload = {}) {
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST', mode: 'cors', cache: 'no-cache',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({ action, ...payload })
-                });
-                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
-                const data = await response.json();
-                if (data.status !== 'success') throw new Error(data.message || 'An unknown script error occurred.');
-                return data;
-            } catch (error) {
-                console.error(`API Call Failed for action "${action}":`, error);
-                throw error;
-            }
-        }
+        async function apiCall(action, payload = {}) { try { const response = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'cors', cache: 'no-cache', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action, ...payload }) }); if (!response.ok) throw new Error(`Network response error: ${response.statusText}`); const data = await response.json(); if (data.status !== 'success') throw new Error(data.message || 'Unknown script error.'); return data; } catch (error) { console.error(`API Call Failed for action "${action}":`, error); throw error; } }
         
         // --- UI & STATE MANAGEMENT ---
-
-        /**
-         * NEW: Centralized function to update the entire UI from the current state.
-         * This function ensures the count and the list are always synchronized.
-         */
         function updateUiFromState() {
-            // 1. Update the main count
-            el.uniqueOrderCount.textContent = scannedBarcodes.length;
-
-            // 2. Clear the old list
+            el.uniqueOrderCount.textContent = currentlyViewingBarcodes.length;
             el.scannedOrderBarcodesList.innerHTML = "";
+            const hasBarcodes = currentlyViewingBarcodes.length > 0;
+            const isViewingToday = currentlyViewingSessionId === currentSessionId;
             
-            // 3. Render the new list
-            const hasBarcodes = scannedBarcodes.length > 0;
+            el.scannedListHeader.textContent = isViewingToday ? "Scanned Barcodes (Today)" : `Viewing Session: ${currentlyViewingSessionId.replace('SESSION-','')}`;
+            el.noOrderBarcodesMessage.textContent = isViewingToday ? "No barcodes scanned yet for today." : "No barcodes were scanned on this day.";
             el.noOrderBarcodesMessage.style.display = hasBarcodes ? 'none' : 'block';
 
             if (hasBarcodes) {
-                scannedBarcodes.forEach((barcode, index) => {
+                currentlyViewingBarcodes.forEach((barcode, index) => {
                     const listItem = document.createElement("li");
                     listItem.style.animation = `slideInFromLeft 0.5s ease-out forwards`;
-                    listItem.className = "flex items-center justify-between p-2 rounded-md shadow-sm border text-lg font-medium bg-gray-700/50 border-gray-600/50 text-gray-200";
+                    const scanNumber = currentlyViewingBarcodes.length - index;
                     
-                    const scanNumber = scannedBarcodes.length - index;
-                    const leftDiv = document.createElement('div');
-                    leftDiv.className = 'flex items-center';
-                    
-                    const numberSpan = document.createElement('span');
-                    numberSpan.className = "font-bold text-blue-300 w-10 text-left";
-                    numberSpan.textContent = `#${scanNumber}`;
-                    
-                    const barcodeSpan = document.createElement('span');
-                    barcodeSpan.textContent = barcode;
-                    
-                    leftDiv.appendChild(numberSpan);
-                    leftDiv.appendChild(barcodeSpan);
-                    
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.textContent = "Delete";
-                    deleteBtn.className = "btn-danger px-3 py-1 text-xs rounded-md font-semibold";
-                    deleteBtn.onclick = () => handleDeleteSingleBarcode(scanNumber - 1);
-                    
-                    listItem.appendChild(leftDiv);
-                    listItem.appendChild(deleteBtn);
+                    if(isViewingToday) {
+                        listItem.className = "flex items-center justify-between p-2 rounded-md shadow-sm border text-lg font-medium bg-gray-700/50 border-gray-600/50 text-gray-200";
+                        const leftDiv = document.createElement('div');
+                        leftDiv.className = 'flex items-center';
+                        const numberSpan = document.createElement('span');
+                        numberSpan.className = "font-bold text-blue-300 w-10 text-left";
+                        numberSpan.textContent = `#${scanNumber}`;
+                        const barcodeSpan = document.createElement('span');
+                        barcodeSpan.textContent = barcode;
+                        leftDiv.appendChild(numberSpan);
+                        leftDiv.appendChild(barcodeSpan);
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = "Delete";
+                        deleteBtn.className = "btn-danger px-3 py-1 text-xs rounded-md font-semibold";
+                        deleteBtn.onclick = () => handleDeleteSingleBarcode(scanNumber - 1);
+                        listItem.appendChild(leftDiv);
+                        listItem.appendChild(deleteBtn);
+                    } else {
+                        listItem.className = "flex items-center p-2 text-gray-400"; // Dim color for old data
+                        listItem.textContent = `#${scanNumber}. ${barcode}`;
+                    }
                     el.scannedOrderBarcodesList.appendChild(listItem);
                 });
-                el.orderListContainer.scrollTop = 0; // Scroll to top of the list
+                el.orderListContainer.scrollTop = 0;
             }
+            el.liveSessionName.textContent = `Session for ${currentSessionId.replace('SESSION-', '')}`;
+            el.liveSessionDisplay.classList.remove('hidden');
         }
-
+        
         // --- APPLICATION LOGIC ---
-
         function handleLogin() {
             const passcode = el.passcodeInput.value;
-            if (!passcode) {
-                el.loginError.textContent = 'Please enter a passcode.';
-                return;
-            }
+            if (!passcode) { el.loginError.textContent = 'Please enter a passcode.'; return; }
             el.loginButton.disabled = true;
             el.loginBtnText.classList.add('hidden');
             el.loginBtnSpinner.classList.remove('hidden');
             el.loginError.textContent = '';
-
             apiCall("validateLogin", { passcode: passcode })
                 .then(() => {
                     el.loginScreen.classList.add('hidden');
@@ -230,7 +225,7 @@
                 })
                 .catch(error => {
                     console.error("Login Error:", error);
-                    el.loginError.textContent = error.message.includes('Invalid Passcode') ? 'Incorrect passcode.' : 'Login failed. Check connection.';
+                    el.loginError.textContent = error.message.includes('Invalid Passcode') ? 'Incorrect passcode.' : 'Login failed.';
                     el.passcodeInput.value = '';
                     el.passcodeInput.focus();
                 })
@@ -240,118 +235,158 @@
                     el.loginBtnSpinner.classList.add('hidden');
                 });
         }
-
+        
         async function initializeApp() {
             setInitialTexts();
             updateClock();
             setInterval(updateClock, 1000);
+            
+            currentSessionId = getTodaySessionId();
+            currentlyViewingSessionId = currentSessionId;
 
-            // Setup event listeners
             el.orderScanInput.addEventListener("keypress", (e) => { if (e.key === 'Enter') handleOrderScanAddBarcode(); });
             el.addOrderBarcodeBtn.addEventListener("click", handleOrderScanAddBarcode);
-            el.clearCurrentOrderBtn.addEventListener("click", () => clearCurrentOrder(true));
-            el.printScannedOrderBtn.addEventListener("click", printScannedOrder);
-            el.downloadCsvBtn.addEventListener("click", downloadCsv);
+            el.returnToTodayBtn.addEventListener("click", returnToTodayView);
+            el.manualSaveBtn.addEventListener("click", handleManualSave);
             el.loadSelectedSessionBtn.addEventListener("click", loadSelectedSession);
             el.deleteSelectedSessionBtn.addEventListener("click", deleteSelectedSession);
             el.searchByDate.addEventListener("input", filterSessionsByDate);
             el.resetDateFilterBtn.addEventListener("click", () => { el.searchByDate.value = ""; filterSessionsByDate(); });
             el.saveToSheetBtn.addEventListener("click", saveDataToGoogleSheet);
+            el.printScannedOrderBtn.addEventListener("click", printScannedOrder);
+            el.downloadCsvBtn.addEventListener("click", downloadCsv);
             
+            await reloadTodaysData();
+
             try {
-                el.loadSelectedSessionBtn.disabled = true;
                 const data = await apiCall("getAllSessions");
                 allSessions = data.sessions;
                 filterSessionsByDate();
             } catch (error) {
-                Swal.fire("Error", "Could not load previous sessions. Check the browser console for details.", "error");
-                el.savedSessionsSelect.innerHTML = `<option value="">Error loading</option>`;
-            } finally {
-                el.loadSelectedSessionBtn.disabled = false;
-                el.loadSelectedSessionBtn.textContent = "Load";
+                Swal.fire("Error", "Could not load previous day's sessions.", "error");
             }
         }
 
+        async function reloadTodaysData() {
+             try {
+                const data = await apiCall("getSessionData", { sessionId: currentSessionId });
+                scannedBarcodes = data.session.data.barcodes || [];
+            } catch (error) {
+                if (error.message.includes('Session not found')) {
+                    scannedBarcodes = [];
+                } else {
+                    Swal.fire("Error", "Could not load today's session data.", "error");
+                }
+            }
+            returnToTodayView(); // This function now sets both view and live data
+        }
+        
         function handleOrderScanAddBarcode() {
+            if (currentlyViewingSessionId !== currentSessionId) {
+                Swal.fire('Action Not Allowed', 'You are currently viewing a past session. Please return to today\'s session to scan new items.', 'warning');
+                return;
+            }
             const barcode = el.orderScanInput.value.trim();
             if (barcode === "") return;
-
             if (scannedBarcodes.includes(barcode)) {
                 showStatusMessage(`Already Scanned: ${barcode}`, "error");
             } else {
                 scannedBarcodes.unshift(barcode);
                 showStatusMessage(`Success: ${barcode}`, "success");
-                
                 const successAudio = document.getElementById('successSound');
                 if (successAudio) {
                     successAudio.pause();
                     successAudio.currentTime = 0;
                     successAudio.play().catch(error => console.error("Audio playback failed:", error));
                 }
-                
-                updateUiFromState(); // UPDATED: Use the central UI function
+                updateUiFromState();
                 autoSaveSession();
             }
             el.orderScanInput.value = "";
             el.orderScanInput.focus();
         }
-
+        
         function handleDeleteSingleBarcode(reverseIndex) {
             const actualIndex = scannedBarcodes.length - 1 - reverseIndex;
-            const barcodeValue = scannedBarcodes[actualIndex];
             Swal.fire({
-                title: 'Are you sure?', text: `Do you want to remove barcode "${barcodeValue}"?`,
+                title: 'Are you sure?', text: `Do you want to permanently delete this barcode?`,
                 icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33',
                 confirmButtonText: 'Yes, delete it!', cancelButtonText: 'Cancel'
             }).then((result) => {
                 if (result.isConfirmed) {
                     scannedBarcodes.splice(actualIndex, 1);
-                    updateUiFromState(); // UPDATED: Use the central UI function
+                    updateUiFromState();
                     autoSaveSession();
                 }
             });
         }
 
+        function returnToTodayView() {
+            currentlyViewingSessionId = currentSessionId;
+            currentlyViewingBarcodes = scannedBarcodes;
+            updateUiFromState();
+        }
+        
         async function loadSelectedSession() {
             const sessionId = el.savedSessionsSelect.value;
-            if (!sessionId) return Swal.fire({ title: "Please select a session.", icon: 'warning' });
+            if (!sessionId) { return Swal.fire({ title: "Please select a previous day's session to view.", icon: 'warning' }); }
             
             el.loadSelectedSessionBtn.disabled = true;
             el.loadSelectedSessionBtn.textContent = "Loading...";
-
             try {
                 const data = await apiCall("getSessionData", { sessionId: sessionId });
-                currentSessionId = data.session.id;
-                scannedBarcodes = data.session.data.barcodes || [];
-                
-                updateUiFromState(); // UPDATED: Use the central UI function
-                
-                el.savedSessionsSelect.value = currentSessionId;
-                Swal.fire({ title: `'${data.session.name}' loaded.`, icon: 'success', timer: 1500, showConfirmButton: false });
+                currentlyViewingSessionId = sessionId;
+                currentlyViewingBarcodes = data.session.data.barcodes || [];
+                updateUiFromState();
             } catch (error) {
                 Swal.fire("Error", "Could not load the selected session.", "error");
+                returnToTodayView(); // Revert to today's view on error
             } finally {
                 el.loadSelectedSessionBtn.disabled = false;
-                el.loadSelectedSessionBtn.textContent = "Load";
+                el.loadSelectedSessionBtn.textContent = "View";
             }
         }
         
-        function clearCurrentOrder(showAlert = true) {
-            scannedBarcodes = [];
-            currentSessionId = null;
-            updateUiFromState(); // UPDATED: Use the central UI function
-            filterSessionsByDate();
-            if (showAlert) Swal.fire({ title: "Session cleared.", icon: "success", timer: 1500, showConfirmButton: false });
+        async function handleManualSave() {
+            el.manualSaveBtn.disabled = true;
+            el.manualSaveBtnText.classList.add('hidden');
+            el.manualSaveBtnSpinner.classList.remove('hidden');
+            try {
+                await autoSaveSession(true); // Pass true to show success alert
+            } catch (error) {
+                 Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Save failed!', showConfirmButton: false, timer: 2000 });
+            } finally {
+                el.manualSaveBtn.disabled = false;
+                el.manualSaveBtnText.classList.remove('hidden');
+                el.manualSaveBtnSpinner.classList.add('hidden');
+            }
         }
         
-        // --- The rest of the functions are unchanged ---
+        async function autoSaveSession(showSuccess = false) {
+            try {
+                await apiCall("saveSession", { sessionId: currentSessionId, barcodes: scannedBarcodes });
+                if (showSuccess) {
+                     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Session saved!', showConfirmButton: false, timer: 2000 });
+                } else {
+                    el.autoSaveStatus.classList.add("show");
+                    setTimeout(() => { el.autoSaveStatus.classList.remove("show") }, 2000);
+                }
+            } catch (error) {
+                el.autoSaveStatus.textContent = '✗ Save Failed';
+                el.autoSaveStatus.style.color = '#e53e3e';
+                el.autoSaveStatus.classList.add("show");
+                setTimeout(() => { el.autoSaveStatus.classList.remove("show"); el.autoSaveStatus.textContent = '✓ Saved'; el.autoSaveStatus.style.color = '#48bb78'; }, 3000);
+                throw error;
+            }
+        }
         
-        async function autoSaveSession(){if(0===scannedBarcodes.length&&!currentSessionId)return;try{const t={sessionId:currentSessionId,name:currentSessionId?null:`Session - ${getTimestamp()}`,barcodes:scannedBarcodes},e=await apiCall("saveSession",t),a=!currentSessionId;currentSessionId=e.sessionId,a&&(allSessions.push({id:currentSessionId,name:t.name,createdAt:Date.now()}),filterSessionsByDate()),el.autoSaveStatus.classList.add("show"),setTimeout(()=>{el.autoSaveStatus.classList.remove("show")},2e3)}catch(t){el.autoSaveStatus.textContent="✗ Save Failed",el.autoSaveStatus.style.color="#e53e3e",el.autoSaveStatus.classList.add("show"),setTimeout(()=>{el.autoSaveStatus.classList.remove("show"),el.autoSaveStatus.textContent="✓ Saved",el.autoSaveStatus.style.color="#48bb78"},3e3)}}
-        function printScannedOrder(){if(0===scannedBarcodes.length)return void Swal.fire({title:"No barcodes to print.",icon:"warning"});document.getElementById("printDate").textContent=getTimestamp();const t=document.getElementById("printBarcodeList");t.innerHTML="";const e=[...scannedBarcodes].reverse();for(let a=0;a<e.length;a+=30){const s=e.slice(a,a+30),n=document.createElement("div");n.className="print-column",s.forEach((t,e)=>{const s=document.createElement("div");s.textContent=`${a+e+1}. ${t}`,n.appendChild(s)}),t.appendChild(n)}window.print()}
-        function downloadCsv(){if(0===scannedBarcodes.length)return void Swal.fire({title:"No barcodes to download.",icon:"warning"});const t=[...scannedBarcodes].reverse();let e="No,Barcode\n";t.forEach((t,a)=>{e+=`${a+1},${t}\n`});const a=new Blob([e],{type:"text/csv;charset=utf-8;"}),s=document.createElement("a");s.href=URL.createObjectURL(a),s.download=`scanned_order_${Date.now()}.csv`,s.click()}
-        function filterSessionsByDate(){const t=el.searchByDate.value;let e=allSessions;t&&(e=allSessions.filter(e=>{const a=e.createdAt||parseInt(e.id.split("-")[1],10),s=new Date(a).toLocaleDateString("en-CA");return s===t})),el.savedSessionsSelect.innerHTML=`<option value="">Select a saved session</option>`,e.sort((t,e)=>(e.createdAt||0)-(t.createdAt||0)).forEach(t=>{const e=document.createElement("option");e.value=t.id,e.textContent=t.name,el.savedSessionsSelect.appendChild(e)}),el.savedSessionsSelect.value=currentSessionId||""}
-        function deleteSelectedSession(){const t=el.savedSessionsSelect.value;if(!t)return void Swal.fire({title:"Please select a session to delete.",icon:"warning"});Swal.fire({title:"Are you sure?",text:"This session will be permanently deleted from Google Sheets!",icon:"warning",showCancelButton:!0,confirmButtonColor:"#d33",confirmButtonText:"Yes, delete it"}).then(e=>{e.isConfirmed&&apiCall("deleteSession",{sessionId:t}).then(()=>{Swal.fire("Deleted!","The session has been deleted.","success"),allSessions=allSessions.filter(e=>e.id!==t),currentSessionId===t&&clearCurrentOrder(!1),filterSessionsByDate()}).catch(()=>{Swal.fire("Error","Could not delete the session.","error")})})}
-        function saveDataToGoogleSheet(){if(0===scannedBarcodes.length)return void Swal.fire("No Data","There are no barcodes to save.","warning");el.saveToSheetBtn.disabled=!0,el.saveBtnText.classList.add("hidden"),el.saveBtnSpinner.classList.remove("hidden"),el.sheetStatus.textContent="Saving...",el.sheetStatus.style.color="#63b3ed";const t={barcodes:[...scannedBarcodes].reverse(),sessionId:currentSessionId||`SESSION-${Date.now()}`};apiCall("saveData",t).then(()=>{el.sheetStatus.textContent="Data saved successfully!",el.sheetStatus.style.color="#48bb78",Swal.fire("Success!","Your data has been saved to the Google Sheet.","success"),clearCurrentOrder(!1)}).catch(()=>{el.sheetStatus.textContent="Save failed. Check console.",el.sheetStatus.style.color="#e53e3e",Swal.fire("Error","Failed to save data. Please check the console for details.","error")}).finally(()=>{el.saveToSheetBtn.disabled=!1,el.saveBtnText.classList.remove("hidden"),el.saveBtnSpinner.classList.add("hidden"),setTimeout(()=>{el.sheetStatus.textContent=""},5e3)})}
+        function printScannedOrder(){if(0===currentlyViewingBarcodes.length)return void Swal.fire({title:"No barcodes to print.",icon:"warning"});document.getElementById("printDate").textContent=getTimestamp();const t=document.getElementById("printBarcodeList");t.innerHTML="";const e=[...currentlyViewingBarcodes].reverse();for(let a=0;a<e.length;a+=30){const s=e.slice(a,a+30),n=document.createElement("div");n.className="print-column",s.forEach((t,e)=>{const s=document.createElement("div");s.textContent=`${a+e+1}. ${t}`,n.appendChild(s)}),t.appendChild(n)}window.print()}
+        function downloadCsv(){if(0===currentlyViewingBarcodes.length)return void Swal.fire({title:"No barcodes to download.",icon:"warning"});const t=[...currentlyViewingBarcodes].reverse();let e="No,Barcode\n";t.forEach((t,a)=>{e+=`${a+1},${t}\n`});const a=new Blob([e],{type:"text/csv;charset=utf-8;"}),s=document.createElement("a");s.href=URL.createObjectURL(a),s.download=`scanned_order_${currentlyViewingSessionId}.csv`,s.click()}
+        
+        // --- Unchanged Functions (except for minor text changes in alerts) ---
+        function filterSessionsByDate(){const t=el.searchByDate.value;let e=allSessions;const a=getTodaySessionId();e=allSessions.filter(t=>t.id!==a),t&&(e=e.filter(e=>{const a=new Date(e.createdAt).toLocaleDateString("en-CA");return a===t})),el.savedSessionsSelect.innerHTML=`<option value="">Select a previous day</option>`,e.sort((t,e)=>e.createdAt-t.createdAt).forEach(t=>{const e=document.createElement("option");e.value=t.id,e.textContent=t.name,el.savedSessionsSelect.appendChild(e)})}
+        function deleteSelectedSession(){const t=el.savedSessionsSelect.value;if(!t)return void Swal.fire({title:"Please select a previous day's session to delete.",icon:"warning"});Swal.fire({title:"Are you sure?",text:"This will permanently delete the selected day's session!",icon:"warning",showCancelButton:!0,confirmButtonColor:"#d33",confirmButtonText:"Yes, delete it"}).then(e=>{e.isConfirmed&&apiCall("deleteSession",{sessionId:t}).then(()=>{Swal.fire("Deleted!","The session has been deleted.","success"),allSessions=allSessions.filter(e=>e.id!==t),filterSessionsByDate()}).catch(()=>{Swal.fire("Error","Could not delete the session.","error")})})}
+        function saveDataToGoogleSheet() { if (scannedBarcodes.length === 0) { return Swal.fire("No Data", "There are no barcodes for today to save.", "warning"); } el.saveToSheetBtn.disabled = true; el.saveBtnText.classList.add('hidden'); el.saveBtnSpinner.classList.remove('hidden'); el.sheetStatus.textContent = "Saving..."; el.sheetStatus.style.color = "#63b3ed"; const payload = { barcodes: [...scannedBarcodes].reverse(), sessionId: currentSessionId }; apiCall("saveData", payload) .then(() => { el.sheetStatus.textContent = "Data saved successfully!"; el.sheetStatus.style.color = "#48bb78"; Swal.fire("Success!", "Today's data has been saved to the daily sheet.", "success"); }) .catch(() => { el.sheetStatus.textContent = "Save failed. Check console."; el.sheetStatus.style.color = "#e53e3e"; Swal.fire("Error", "Failed to save data. Please check the console.", "error"); }) .finally(() => { el.saveToSheetBtn.disabled = false; el.saveBtnText.classList.remove('hidden'); el.saveBtnSpinner.classList.add('hidden'); setTimeout(() => { el.sheetStatus.textContent = "" }, 5000); }); }
         
         document.addEventListener("DOMContentLoaded", () => {
             el.loginButton.addEventListener('click', handleLogin);
