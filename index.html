@@ -7,11 +7,11 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes moveLights{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}body{background-color:#020412;color:#e2e8f0;font-family:'Inter',sans-serif;position:relative;overflow:hidden}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;z-index:-1;background:radial-gradient(circle at 15% 25%,hsla(210,70%,80%,.25),transparent 35%),radial-gradient(circle at 85% 35%,hsla(280,60%,80%,.25),transparent 40%),radial-gradient(circle at 50% 85%,hsla(190,60%,70%,.2),transparent 45%);background-size:250% 250%;animation:moveLights 40s ease-in-out infinite}.overflow-y-auto::-webkit-scrollbar{width:8px}.overflow-y-auto::-webkit-scrollbar-track{background:#2d3748}.overflow-y-auto::-webkit-scrollbar-thumb{background:#4a5568;border-radius:10px}.card{background-color:rgba(26,32,44,.7);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);transition:transform .3s ease,box-shadow .3s ease}.card:hover{transform:translateY(-5px);box-shadow:0 10px 25px rgba(0,0,0,.2)}.status-message{transition:all .4s ease-in-out;opacity:0;transform:translateY(-15px);max-height:0;margin-top:0}.status-message.show{opacity:1;transform:translateY(0);max-height:100px;padding:.5rem;margin-top:.75rem}.auto-save-status{opacity:0;transition:opacity .5s ease;color:#48bb78}.auto-save-status.show{opacity:1}.btn-primary,.btn-secondary,.btn-danger,.btn-info,.btn-success,.btn-warning{transition:background-color .2s,transform .1s ease-out}.btn-primary:active,.btn-secondary:active,.btn-danger:active,.btn-info:active,.btn-success:active,.btn-warning:active{transform:scale(.97)}.text-primary{color:#e2e8f0}.text-secondary{color:#a0aec0}.bg-card-section{background-color:rgba(45,55,72,.5)}.border-theme{border-color:rgba(255,255,255,.1)}.btn-primary{background-color:#4299e1;color:#fff}.btn-primary:hover{background-color:#2b6cb0}.btn-secondary{background-color:#4a5568;color:#e2e8f0;border:1px solid #718096}.btn-secondary:hover{background-color:#2d3748}.btn-danger{background-color:#e53e3e;color:#fff}.btn-danger:hover{background-color:#c53030}.btn-info{background-color:#5a67d8;color:#fff}.btn-info:hover{background-color:#4c51bf}.btn-success{background-color:#38a169;color:#fff}.btn-success:hover{background-color:#2f855a}.btn-warning{background-color:#f6ad55;color:#fff}.btn-warning:hover{background-color:#dd6b20}.bg-green-status{background-color:#2f855a;border:1px solid #38a169;color:#c6f6d5}.bg-red-status{background-color:#c53030;border:1px solid #e53e3e;color:#fed7d7}input,select,textarea{background-color:#1a202c;border-color:#4a5568;color:#e2e8f0}input::placeholder,textarea::placeholder{color:#718096}input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.8);cursor:pointer}@media print{body,body::before{background:#fff!important}body>*:not(#print-area){display:none!important}#print-area{display:block!important;position:absolute;left:0;top:0;width:100%;padding:5mm;box-sizing:border-box;font-family:'Arial',sans-serif;color:#000}.no-print{display:none!important}.print-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #333;padding-bottom:5px;margin-bottom:10px}.print-title-group{display:flex;align-items:center;gap:15px}.print-header .company-logo{height:40px}.print-header .company-name-print{font-family:'Impact',Haettenschweiler,'Arial Narrow Bold',sans-serif;font-size:18pt;letter-spacing:1px}.print-header .print-date{font-size:10pt;font-weight:bold}#printBarcodeList{column-count:5;column-gap:15px;font-size:9pt}.print-column{break-inside:avoid;padding-right:10px}.print-column div{margin-bottom:4px;white-space:nowrap}.print-footer{display:none!important}}@keyframes slideInFromLeft{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes moveLights{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}html{height:100%}body{background-color:#020412;color:#e2e8f0;font-family:'Inter',sans-serif;position:relative;min-height:100%;overflow-y:auto}body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;z-index:-1;background:radial-gradient(circle at 15% 25%,hsla(210,70%,80%,.25),transparent 35%),radial-gradient(circle at 85% 35%,hsla(280,60%,80%,.25),transparent 40%),radial-gradient(circle at 50% 85%,hsla(190,60%,70%,.2),transparent 45%);background-size:250% 250%;animation:moveLights 40s ease-in-out infinite}.overflow-y-auto::-webkit-scrollbar{width:8px}.overflow-y-auto::-webkit-scrollbar-track{background:#2d3748}.overflow-y-auto::-webkit-scrollbar-thumb{background:#4a5568;border-radius:10px}.card{background-color:rgba(26,32,44,.7);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);transition:transform .3s ease,box-shadow .3s ease}.card:hover{transform:translateY(-5px);box-shadow:0 10px 25px rgba(0,0,0,.2)}.status-message{transition:all .4s ease-in-out;opacity:0;transform:translateY(-15px);max-height:0;margin-top:0}.status-message.show{opacity:1;transform:translateY(0);max-height:100px;padding:.5rem;margin-top:.75rem}.auto-save-status{opacity:0;transition:opacity .5s ease;color:#48bb78}.auto-save-status.show{opacity:1}.btn-primary,.btn-secondary,.btn-danger,.btn-info,.btn-success,.btn-warning{transition:background-color .2s,transform .1s ease-out}.btn-primary:active,.btn-secondary:active,.btn-danger:active,.btn-info:active,.btn-success:active,.btn-warning:active{transform:scale(.97)}.text-primary{color:#e2e8f0}.text-secondary{color:#a0aec0}.bg-card-section{background-color:rgba(45,55,72,.5)}.border-theme{border-color:rgba(255,255,255,.1)}.btn-primary{background-color:#4299e1;color:#fff}.btn-primary:hover{background-color:#2b6cb0}.btn-secondary{background-color:#4a5568;color:#e2e8f0;border:1px solid #718096}.btn-secondary:hover{background-color:#2d3748}.btn-danger{background-color:#e53e3e;color:#fff}.btn-danger:hover{background-color:#c53030}.btn-info{background-color:#5a67d8;color:#fff}.btn-info:hover{background-color:#4c51bf}.btn-success{background-color:#38a169;color:#fff}.btn-success:hover{background-color:#2f855a}.btn-warning{background-color:#f6ad55;color:#fff}.btn-warning:hover{background-color:#dd6b20}.bg-green-status{background-color:#2f855a;border:1px solid #38a169;color:#c6f6d5}.bg-red-status{background-color:#c53030;border:1px solid #e53e3e;color:#fed7d7}input,select,textarea{background-color:#1a202c;border-color:#4a5568;color:#e2e8f0}input::placeholder,textarea::placeholder{color:#718096}input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.8);cursor:pointer}@media print{body,body::before{background:#fff!important}body>*:not(#print-area){display:none!important}#print-area{display:block!important;position:absolute;left:0;top:0;width:100%;padding:5mm;box-sizing:border-box;font-family:'Arial',sans-serif;color:#000}.no-print{display:none!important}.print-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #333;padding-bottom:5px;margin-bottom:10px}.print-title-group{display:flex;align-items:center;gap:15px}.print-header .company-logo{height:40px}.print-header .company-name-print{font-family:'Impact',Haettenschweiler,'Arial Narrow Bold',sans-serif;font-size:18pt;letter-spacing:1px}.print-header .print-date{font-size:10pt;font-weight:bold}#printBarcodeList{column-count:5;column-gap:15px;font-size:9pt}.print-column{break-inside:avoid;padding-right:10px}.print-column div{margin-bottom:4px;white-space:nowrap}.print-footer{display:none!important}}@keyframes slideInFromLeft{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 lg:p-8">
+<body class="flex items-center justify-center p-4 lg:p-8">
 
     <!-- Login Screen -->
     <div id="login-screen" class="w-full max-w-sm">
@@ -62,7 +62,6 @@
                     <div id="statusMessage" class="status-message rounded-lg text-center font-semibold p-2"></div>
                 </div>
                 <div>
-                    <!-- UPDATED: Dynamic header for the scanned list -->
                     <h2 id="scannedListHeader" class="text-2xl font-bold text-primary mb-4 border-b border-theme pb-2"></h2>
                     <div id="orderListContainer" class="bg-card-section p-4 rounded-lg border border-theme max-h-60 lg:max-h-96 overflow-y-auto shadow-inner">
                         <ul id="scannedOrderBarcodesList" class="space-y-2">
@@ -138,14 +137,10 @@
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyuYsSzGAmbFUClFQEWYbPSYyDKeh3CJn8dn5yPZ4AhFxZtBseTCYurxirFRAzJ25KO/exec"; 
         // =========================================================================
 
-        // State for live data (today)
         let scannedBarcodes = [];
         let currentSessionId = null;
-
-        // State for what is currently being displayed on screen
         let currentlyViewingBarcodes = [];
         let currentlyViewingSessionId = null;
-
         let allSessions = [];
 
         const el = {
@@ -172,6 +167,10 @@
             el.scannedListHeader.textContent = isViewingToday ? "Scanned Barcodes (Today)" : `Viewing Session: ${currentlyViewingSessionId.replace('SESSION-','')}`;
             el.noOrderBarcodesMessage.textContent = isViewingToday ? "No barcodes scanned yet for today." : "No barcodes were scanned on this day.";
             el.noOrderBarcodesMessage.style.display = hasBarcodes ? 'none' : 'block';
+            el.returnToTodayBtn.style.display = isViewingToday ? 'none' : 'block';
+            el.orderScanInput.disabled = !isViewingToday;
+            el.addOrderBarcodeBtn.disabled = !isViewingToday;
+            el.orderScanInput.placeholder = isViewingToday ? "Barcode number..." : "Viewing past session...";
 
             if (hasBarcodes) {
                 currentlyViewingBarcodes.forEach((barcode, index) => {
@@ -197,7 +196,7 @@
                         listItem.appendChild(leftDiv);
                         listItem.appendChild(deleteBtn);
                     } else {
-                        listItem.className = "flex items-center p-2 text-gray-400"; // Dim color for old data
+                        listItem.className = "flex items-center p-2 text-gray-400";
                         listItem.textContent = `#${scanNumber}. ${barcode}`;
                     }
                     el.scannedOrderBarcodesList.appendChild(listItem);
@@ -242,7 +241,6 @@
             setInterval(updateClock, 1000);
             
             currentSessionId = getTodaySessionId();
-            currentlyViewingSessionId = currentSessionId;
 
             el.orderScanInput.addEventListener("keypress", (e) => { if (e.key === 'Enter') handleOrderScanAddBarcode(); });
             el.addOrderBarcodeBtn.addEventListener("click", handleOrderScanAddBarcode);
@@ -266,7 +264,7 @@
                 Swal.fire("Error", "Could not load previous day's sessions.", "error");
             }
         }
-
+        
         async function reloadTodaysData() {
              try {
                 const data = await apiCall("getSessionData", { sessionId: currentSessionId });
@@ -278,27 +276,22 @@
                     Swal.fire("Error", "Could not load today's session data.", "error");
                 }
             }
-            returnToTodayView(); // This function now sets both view and live data
+            returnToTodayView();
         }
         
         function handleOrderScanAddBarcode() {
-            if (currentlyViewingSessionId !== currentSessionId) {
-                Swal.fire('Action Not Allowed', 'You are currently viewing a past session. Please return to today\'s session to scan new items.', 'warning');
-                return;
-            }
             const barcode = el.orderScanInput.value.trim();
             if (barcode === "") return;
             if (scannedBarcodes.includes(barcode)) {
                 showStatusMessage(`Already Scanned: ${barcode}`, "error");
+                const errorAudio = document.getElementById('errorSound');
+                if (errorAudio) { errorAudio.pause(); errorAudio.currentTime = 0; errorAudio.play().catch(console.error); }
             } else {
                 scannedBarcodes.unshift(barcode);
+                currentlyViewingBarcodes = scannedBarcodes;
                 showStatusMessage(`Success: ${barcode}`, "success");
                 const successAudio = document.getElementById('successSound');
-                if (successAudio) {
-                    successAudio.pause();
-                    successAudio.currentTime = 0;
-                    successAudio.play().catch(error => console.error("Audio playback failed:", error));
-                }
+                if (successAudio) { successAudio.pause(); successAudio.currentTime = 0; successAudio.play().catch(console.error); }
                 updateUiFromState();
                 autoSaveSession();
             }
@@ -315,15 +308,16 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     scannedBarcodes.splice(actualIndex, 1);
+                    currentlyViewingBarcodes = scannedBarcodes;
                     updateUiFromState();
                     autoSaveSession();
                 }
             });
         }
-
+        
         function returnToTodayView() {
             currentlyViewingSessionId = currentSessionId;
-            currentlyViewingBarcodes = scannedBarcodes;
+            currentlyViewingBarcodes = [...scannedBarcodes]; // Use a copy to avoid reference issues
             updateUiFromState();
         }
         
@@ -340,7 +334,7 @@
                 updateUiFromState();
             } catch (error) {
                 Swal.fire("Error", "Could not load the selected session.", "error");
-                returnToTodayView(); // Revert to today's view on error
+                returnToTodayView();
             } finally {
                 el.loadSelectedSessionBtn.disabled = false;
                 el.loadSelectedSessionBtn.textContent = "View";
@@ -352,7 +346,7 @@
             el.manualSaveBtnText.classList.add('hidden');
             el.manualSaveBtnSpinner.classList.remove('hidden');
             try {
-                await autoSaveSession(true); // Pass true to show success alert
+                await autoSaveSession(true);
             } catch (error) {
                  Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Save failed!', showConfirmButton: false, timer: 2000 });
             } finally {
@@ -380,12 +374,12 @@
             }
         }
         
-        function printScannedOrder(){if(0===currentlyViewingBarcodes.length)return void Swal.fire({title:"No barcodes to print.",icon:"warning"});document.getElementById("printDate").textContent=getTimestamp();const t=document.getElementById("printBarcodeList");t.innerHTML="";const e=[...currentlyViewingBarcodes].reverse();for(let a=0;a<e.length;a+=30){const s=e.slice(a,a+30),n=document.createElement("div");n.className="print-column",s.forEach((t,e)=>{const s=document.createElement("div");s.textContent=`${a+e+1}. ${t}`,n.appendChild(s)}),t.appendChild(n)}window.print()}
-        function downloadCsv(){if(0===currentlyViewingBarcodes.length)return void Swal.fire({title:"No barcodes to download.",icon:"warning"});const t=[...currentlyViewingBarcodes].reverse();let e="No,Barcode\n";t.forEach((t,a)=>{e+=`${a+1},${t}\n`});const a=new Blob([e],{type:"text/csv;charset=utf-8;"}),s=document.createElement("a");s.href=URL.createObjectURL(a),s.download=`scanned_order_${currentlyViewingSessionId}.csv`,s.click()}
+        // UPDATED: Print function with item count change to 42
+        function printScannedOrder(){if(0===currentlyViewingBarcodes.length)return void Swal.fire({title:"No items in the current view to print.",icon:"warning"});document.getElementById("printDate").textContent=getTimestamp();const t=document.getElementById("printBarcodeList");t.innerHTML="";const e=[...currentlyViewingBarcodes].reverse();for(let a=0,s=40;a<e.length;a+=s){const n=e.slice(a,a+s),o=document.createElement("div");o.className="print-column",n.forEach((t,s)=>{const n=document.createElement("div");n.textContent=`${a+s+1}. ${t}`,o.appendChild(n)}),t.appendChild(o)}window.print()}
+        function downloadCsv(){if(0===currentlyViewingBarcodes.length)return void Swal.fire({title:"No items in the current view to download.",icon:"warning"});const t=[...currentlyViewingBarcodes].reverse();let e="No,Barcode\n";t.forEach((t,a)=>{e+=`${a+1},${t}\n`});const a=new Blob([e],{type:"text/csv;charset=utf-8;"}),s=document.createElement("a");s.href=URL.createObjectURL(a),s.download=`scanned_order_${currentlyViewingSessionId}.csv`,s.click()}
         
-        // --- Unchanged Functions (except for minor text changes in alerts) ---
         function filterSessionsByDate(){const t=el.searchByDate.value;let e=allSessions;const a=getTodaySessionId();e=allSessions.filter(t=>t.id!==a),t&&(e=e.filter(e=>{const a=new Date(e.createdAt).toLocaleDateString("en-CA");return a===t})),el.savedSessionsSelect.innerHTML=`<option value="">Select a previous day</option>`,e.sort((t,e)=>e.createdAt-t.createdAt).forEach(t=>{const e=document.createElement("option");e.value=t.id,e.textContent=t.name,el.savedSessionsSelect.appendChild(e)})}
-        function deleteSelectedSession(){const t=el.savedSessionsSelect.value;if(!t)return void Swal.fire({title:"Please select a previous day's session to delete.",icon:"warning"});Swal.fire({title:"Are you sure?",text:"This will permanently delete the selected day's session!",icon:"warning",showCancelButton:!0,confirmButtonColor:"#d33",confirmButtonText:"Yes, delete it"}).then(e=>{e.isConfirmed&&apiCall("deleteSession",{sessionId:t}).then(()=>{Swal.fire("Deleted!","The session has been deleted.","success"),allSessions=allSessions.filter(e=>e.id!==t),filterSessionsByDate()}).catch(()=>{Swal.fire("Error","Could not delete the session.","error")})})}
+        function deleteSelectedSession(){const t=el.savedSessionsSelect.value;if(!t)return void Swal.fire({title:"Please select a previous day's session to delete.",icon:"warning"});Swal.fire({title:"Are you sure?",text:"This will permanently delete the selected day's session!",icon:"warning",showCancelButton:!0,confirmButtonColor:"#d33",confirmButtonText:"Yes, delete it"}).then(e=>{e.isConfirmed&&apiCall("deleteSession",{sessionId:t}).then(()=>{Swal.fire("Deleted!","The session has been deleted.","success"),allSessions=allSessions.filter(e=>e.id!==t),filterSessionsByDate(),currentlyViewingSessionId===t&&returnToTodayView()}).catch(()=>{Swal.fire("Error","Could not delete the session.","error")})})}
         function saveDataToGoogleSheet() { if (scannedBarcodes.length === 0) { return Swal.fire("No Data", "There are no barcodes for today to save.", "warning"); } el.saveToSheetBtn.disabled = true; el.saveBtnText.classList.add('hidden'); el.saveBtnSpinner.classList.remove('hidden'); el.sheetStatus.textContent = "Saving..."; el.sheetStatus.style.color = "#63b3ed"; const payload = { barcodes: [...scannedBarcodes].reverse(), sessionId: currentSessionId }; apiCall("saveData", payload) .then(() => { el.sheetStatus.textContent = "Data saved successfully!"; el.sheetStatus.style.color = "#48bb78"; Swal.fire("Success!", "Today's data has been saved to the daily sheet.", "success"); }) .catch(() => { el.sheetStatus.textContent = "Save failed. Check console."; el.sheetStatus.style.color = "#e53e3e"; Swal.fire("Error", "Failed to save data. Please check the console.", "error"); }) .finally(() => { el.saveToSheetBtn.disabled = false; el.saveBtnText.classList.remove('hidden'); el.saveBtnSpinner.classList.add('hidden'); setTimeout(() => { el.sheetStatus.textContent = "" }, 5000); }); }
         
         document.addEventListener("DOMContentLoaded", () => {
@@ -398,5 +392,6 @@
 
     </script>
 <audio id="successSound" src="play.mp3" preload="auto"></audio>
+<audio id="errorSound" src="error.mp3" preload="auto"></audio>
 </body>
 </html>
