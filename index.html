@@ -91,6 +91,17 @@
                         <span id="autoSaveStatus" class="auto-save-status font-semibold">✓ Saved</span>
                     </div>
 
+                    <!-- NEW: Barcode Search Section -->
+                    <div class="mb-4">
+                        <label for="barcodeSearchInput" class="block mb-2 text-sm font-medium text-secondary">Search Barcode</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="barcodeSearchInput" placeholder="Enter barcode to find..." class="w-full p-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500">
+                            <button id="barcodeSearchBtn" class="px-4 py-2 rounded-lg font-semibold shadow-md btn-info">Search</button>
+                        </div>
+                        <p id="barcodeSearchResult" class="text-center text-sm h-4 mt-2"></p>
+                    </div>
+                    <hr class="my-4 border-gray-600">
+                    
                     <div id="liveSessionDisplay" class="mb-2 p-3 bg-blue-900/40 rounded-lg text-center border border-blue-700/60 hidden">
                         <p class="text-sm text-blue-300">Live Session:</p>
                         <p id="liveSessionName" class="font-bold text-lg text-white"></p>
@@ -144,7 +155,7 @@
         let allSessions = [];
 
         const el = {
-            loginScreen: document.getElementById('login-screen'), loginButton: document.getElementById('loginButton'), loginBtnText: document.getElementById('loginBtnText'), loginBtnSpinner: document.getElementById('loginBtnSpinner'), passcodeInput: document.getElementById('passcodeInput'), loginError: document.getElementById('loginError'), appContainer: document.getElementById('app-container'), appTitle: document.getElementById("appTitle"), scanOrderDescription: document.getElementById("scanOrderDescription"), uniqueOrderCountLabel: document.getElementById("uniqueOrderCountLabel"), uniqueOrderCount: document.getElementById("uniqueOrderCount"), orderScanInput: document.getElementById("orderScanInput"), addOrderBarcodeBtn: document.getElementById("addOrderBarcodeBtn"), statusMessage: document.getElementById("statusMessage"), scannedListHeader: document.getElementById("scannedListHeader"), scannedOrderBarcodesList: document.getElementById("scannedOrderBarcodesList"), noOrderBarcodesMessage: document.getElementById("noOrderBarcodesMessage"), orderListContainer: document.getElementById("orderListContainer"), returnToTodayBtn: document.getElementById("returnToTodayBtn"), exportTitle: document.getElementById("exportTitle"), printScannedOrderBtn: document.getElementById("printScannedOrderBtn"), downloadCsvBtn: document.getElementById("downloadCsvBtn"), loadPreviousOrdersTitle: document.getElementById("loadPreviousOrdersTitle"), autoSaveStatus: document.getElementById("autoSaveStatus"), searchByDateLabel: document.getElementById("searchByDateLabel"), searchByDate: document.getElementById("searchByDate"), resetDateFilterBtn: document.getElementById("resetDateFilterBtn"), savedSessionsSelect: document.getElementById("savedSessionsSelect"), loadSelectedSessionBtn: document.getElementById("loadSelectedSessionBtn"), deleteSelectedSessionBtn: document.getElementById("deleteSelectedSessionBtn"), liveClock: document.getElementById("live-clock"), saveToSheetBtn: document.getElementById('saveToSheetBtn'), saveBtnText: document.getElementById('saveBtnText'), saveBtnSpinner: document.getElementById('saveBtnSpinner'), sheetStatus: document.getElementById('sheetStatus'), liveSessionDisplay: document.getElementById('liveSessionDisplay'), liveSessionName: document.getElementById('liveSessionName'), manualSaveBtn: document.getElementById('manualSaveBtn'), manualSaveBtnText: document.getElementById('manualSaveBtnText'), manualSaveBtnSpinner: document.getElementById('manualSaveBtnSpinner'),
+            loginScreen: document.getElementById('login-screen'), loginButton: document.getElementById('loginButton'), loginBtnText: document.getElementById('loginBtnText'), loginBtnSpinner: document.getElementById('loginBtnSpinner'), passcodeInput: document.getElementById('passcodeInput'), loginError: document.getElementById('loginError'), appContainer: document.getElementById('app-container'), appTitle: document.getElementById("appTitle"), scanOrderDescription: document.getElementById("scanOrderDescription"), uniqueOrderCountLabel: document.getElementById("uniqueOrderCountLabel"), uniqueOrderCount: document.getElementById("uniqueOrderCount"), orderScanInput: document.getElementById("orderScanInput"), addOrderBarcodeBtn: document.getElementById("addOrderBarcodeBtn"), statusMessage: document.getElementById("statusMessage"), scannedListHeader: document.getElementById("scannedListHeader"), scannedOrderBarcodesList: document.getElementById("scannedOrderBarcodesList"), noOrderBarcodesMessage: document.getElementById("noOrderBarcodesMessage"), orderListContainer: document.getElementById("orderListContainer"), returnToTodayBtn: document.getElementById("returnToTodayBtn"), exportTitle: document.getElementById("exportTitle"), printScannedOrderBtn: document.getElementById("printScannedOrderBtn"), downloadCsvBtn: document.getElementById("downloadCsvBtn"), loadPreviousOrdersTitle: document.getElementById("loadPreviousOrdersTitle"), autoSaveStatus: document.getElementById("autoSaveStatus"), searchByDateLabel: document.getElementById("searchByDateLabel"), searchByDate: document.getElementById("searchByDate"), resetDateFilterBtn: document.getElementById("resetDateFilterBtn"), savedSessionsSelect: document.getElementById("savedSessionsSelect"), loadSelectedSessionBtn: document.getElementById("loadSelectedSessionBtn"), deleteSelectedSessionBtn: document.getElementById("deleteSelectedSessionBtn"), liveClock: document.getElementById("live-clock"), saveToSheetBtn: document.getElementById('saveToSheetBtn'), saveBtnText: document.getElementById('saveBtnText'), saveBtnSpinner: document.getElementById('saveBtnSpinner'), sheetStatus: document.getElementById('sheetStatus'), liveSessionDisplay: document.getElementById('liveSessionDisplay'), liveSessionName: document.getElementById('liveSessionName'), manualSaveBtn: document.getElementById('manualSaveBtn'), manualSaveBtnText: document.getElementById('manualSaveBtnText'), manualSaveBtnSpinner: document.getElementById('manualSaveBtnSpinner'), barcodeSearchInput: document.getElementById('barcodeSearchInput'), barcodeSearchBtn: document.getElementById('barcodeSearchBtn'), barcodeSearchResult: document.getElementById('barcodeSearchResult'),
         };
 
         // --- CORE & HELPER FUNCTIONS ---
@@ -171,6 +182,7 @@
             el.orderScanInput.disabled = !isViewingToday;
             el.addOrderBarcodeBtn.disabled = !isViewingToday;
             el.orderScanInput.placeholder = isViewingToday ? "Barcode number..." : "Viewing past session...";
+
 
             if (hasBarcodes) {
                 currentlyViewingBarcodes.forEach((barcode, index) => {
@@ -250,6 +262,8 @@
             el.deleteSelectedSessionBtn.addEventListener("click", deleteSelectedSession);
             el.searchByDate.addEventListener("input", filterSessionsByDate);
             el.resetDateFilterBtn.addEventListener("click", () => { el.searchByDate.value = ""; filterSessionsByDate(); });
+            el.barcodeSearchBtn.addEventListener("click", handleBarcodeSearch);
+            el.barcodeSearchInput.addEventListener("keypress", (e) => { if (e.key === 'Enter') handleBarcodeSearch(); });
             el.saveToSheetBtn.addEventListener("click", saveDataToGoogleSheet);
             el.printScannedOrderBtn.addEventListener("click", printScannedOrder);
             el.downloadCsvBtn.addEventListener("click", downloadCsv);
@@ -317,7 +331,7 @@
         
         function returnToTodayView() {
             currentlyViewingSessionId = currentSessionId;
-            currentlyViewingBarcodes = [...scannedBarcodes]; // Use a copy to avoid reference issues
+            currentlyViewingBarcodes = [...scannedBarcodes];
             updateUiFromState();
         }
         
@@ -338,6 +352,34 @@
             } finally {
                 el.loadSelectedSessionBtn.disabled = false;
                 el.loadSelectedSessionBtn.textContent = "View";
+            }
+        }
+
+        async function handleBarcodeSearch() {
+            const barcodeToSearch = el.barcodeSearchInput.value.trim();
+            if (!barcodeToSearch) {
+                el.barcodeSearchResult.textContent = "Please enter a barcode.";
+                el.barcodeSearchResult.style.color = "#f6ad55"; // warning color
+                return;
+            }
+            el.barcodeSearchBtn.disabled = true;
+            el.barcodeSearchResult.textContent = "Searching...";
+            el.barcodeSearchResult.style.color = "#63b3ed"; // info color
+
+            try {
+                const data = await apiCall("searchBarcode", { barcode: barcodeToSearch });
+                if (data.found) {
+                    el.barcodeSearchResult.textContent = `Found in session: ${data.date}`;
+                    el.barcodeSearchResult.style.color = "#48bb78"; // success color
+                } else {
+                    el.barcodeSearchResult.textContent = "Barcode not found in any session.";
+                    el.barcodeSearchResult.style.color = "#e53e3e"; // danger color
+                }
+            } catch (error) {
+                el.barcodeSearchResult.textContent = "Search failed. Check console.";
+                el.barcodeSearchResult.style.color = "#e53e3e";
+            } finally {
+                el.barcodeSearchBtn.disabled = false;
             }
         }
         
@@ -374,8 +416,7 @@
             }
         }
         
-        // UPDATED: Print function with item count change to 42
-        function printScannedOrder(){if(0===currentlyViewingBarcodes.length)return void Swal.fire({title:"No items in the current view to print.",icon:"warning"});document.getElementById("printDate").textContent=getTimestamp();const t=document.getElementById("printBarcodeList");t.innerHTML="";const e=[...currentlyViewingBarcodes].reverse();for(let a=0,s=40;a<e.length;a+=s){const n=e.slice(a,a+s),o=document.createElement("div");o.className="print-column",n.forEach((t,s)=>{const n=document.createElement("div");n.textContent=`${a+s+1}. ${t}`,o.appendChild(n)}),t.appendChild(o)}window.print()}
+        function printScannedOrder(){if(0===currentlyViewingBarcodes.length)return void Swal.fire({title:"No items in the current view to print.",icon:"warning"});document.getElementById("printDate").textContent=getTimestamp();const t=document.getElementById("printBarcodeList");t.innerHTML="";const e=[...currentlyViewingBarcodes].reverse();for(let a=0,s=42;a<e.length;a+=s){const n=e.slice(a,a+s),o=document.createElement("div");o.className="print-column",n.forEach((t,s)=>{const n=document.createElement("div");n.textContent=`${a+s+1}. ${t}`,o.appendChild(n)}),t.appendChild(o)}window.print()}
         function downloadCsv(){if(0===currentlyViewingBarcodes.length)return void Swal.fire({title:"No items in the current view to download.",icon:"warning"});const t=[...currentlyViewingBarcodes].reverse();let e="No,Barcode\n";t.forEach((t,a)=>{e+=`${a+1},${t}\n`});const a=new Blob([e],{type:"text/csv;charset=utf-8;"}),s=document.createElement("a");s.href=URL.createObjectURL(a),s.download=`scanned_order_${currentlyViewingSessionId}.csv`,s.click()}
         
         function filterSessionsByDate(){const t=el.searchByDate.value;let e=allSessions;const a=getTodaySessionId();e=allSessions.filter(t=>t.id!==a),t&&(e=e.filter(e=>{const a=new Date(e.createdAt).toLocaleDateString("en-CA");return a===t})),el.savedSessionsSelect.innerHTML=`<option value="">Select a previous day</option>`,e.sort((t,e)=>e.createdAt-t.createdAt).forEach(t=>{const e=document.createElement("option");e.value=t.id,e.textContent=t.name,el.savedSessionsSelect.appendChild(e)})}
